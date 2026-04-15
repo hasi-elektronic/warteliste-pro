@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "patienten",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "anmeldung", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "patienten",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "monat", "order": "ASCENDING" },
+        { "fieldPath": "anmeldung", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

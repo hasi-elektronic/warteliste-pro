@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Benutzer-Mapping: nur der eigene Datensatz lesbar/schreibbar
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Invites: jeder eingeloggte User darf lesen (um eigene Einladungen zu finden)
+    // Schreiben nur fuer Praxis-Admins (wird im Code geprueft)
+    match /invites/{inviteId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null;
+    }
+
+    // Praxis: nur Mitglieder (User mit passender praxisId/praxisIds) duerfen lesen/schreiben
+    match /praxen/{praxisId} {
+      allow read: if request.auth != null && isPraxisMember(praxisId);
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && isPraxisMember(praxisId);
+
+      // Patienten: nur Praxis-Mitglieder
+      match /patienten/{patientId} {
+        allow read, write: if request.auth != null && isPraxisMember(praxisId);
+
+        // Notizen/Anrufe: Subcollection der Patienten
+        match /notizen/{noteId} {
+          allow read, write: if request.auth != null && isPraxisMember(praxisId);
+        }
+
+        // Dokumente: Subcollection der Patienten
+        match /dokumente/{dokumentId} {
+          allow read, write: if request.auth != null && isPraxisMember(praxisId);
+        }
+      }
+
+      // Therapeuten/Behandler: nur Praxis-Mitglieder
+      match /therapeuten/{therapeutId} {
+        allow read, write: if request.auth != null && isPraxisMember(praxisId);
+      }
+
+      // Termine: nur Praxis-Mitglieder
+      match /termine/{terminId} {
+        allow read, write: if request.auth != null && isPraxisMember(praxisId);
+      }
+
+      // FCM Tokens: nur Praxis-Mitglieder
+      match /tokens/{tokenId} {
+        allow read, write: if request.auth != null && isPraxisMember(praxisId);
+      }
+    }
+
+    // Hilfsfunktion: Prueft ob der User zur Praxis gehoert (unterstuetzt praxisId und praxisIds)
+    function isPraxisMember(praxisId) {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && (
+          userDoc.data.praxisId == praxisId
+          || (userDoc.data.keys().hasAny(['praxisIds']) && praxisId in userDoc.data.praxisIds)
+        );
+    }
+  }
+}

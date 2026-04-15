@@ -1,0 +1,61 @@
+WarteListe Pro – Die professionelle Wartelisten-Verwaltung für Logopädie-Praxen
+
+Verwalten Sie Ihre Patienten-Warteliste digital, sicher und übersichtlich. Schluss mit unübersichtlichen Excel-Tabellen und verlorenen Notizzetteln.
+
+✨ FUNKTIONEN
+
+📋 PATIENTEN-VERWALTUNG
+• Alle Patientendaten zentral an einem Ort
+• Schnelles Erfassen neuer Anmeldungen
+• Übersichtliche Listenansicht mit Suche und Filter
+• Anrufen direkt aus der App
+
+📊 DASHBOARD & STATISTIKEN
+• KPI-Cards mit allen wichtigen Zahlen auf einen Blick
+• Wartende, Platz gefunden, in Behandlung
+• Auslastungsanzeige in Echtzeit
+• Monatliche Übersicht als Balkendiagramm
+
+🏷️ STATUS-TRACKING
+• Status pro Patient: wartend, Platz gefunden, in Behandlung, abgeschlossen
+• Farbcodierung für schnelle Übersicht
+• Wartezeit in Tagen automatisch berechnet
+
+👥 THERAPEUTEN-VERWALTUNG
+• Mehrere Therapeuten pro Praxis
+• Patienten zuweisen
+• Aktiv/Inaktiv-Status
+
+📥 EXCEL IMPORT & EXPORT
+• Bestehende Excel-Listen einfach importieren
+• Wartelisten als Excel exportieren und teilen
+• Kompatibel mit gängigen Tabellen-Programmen
+
+☁️ CLOUD-SYNCHRONISATION
+• Automatische Synchronisation zwischen allen Geräten
+• Sichere Speicherung in Google Firebase
+• Server in der EU – DSGVO-konform
+• Verschlüsselte Datenübertragung
+
+🔒 SICHERHEIT & DATENSCHUTZ
+• Sichere Anmeldung mit E-Mail und Passwort
+• Strenge Zugriffskontrollen pro Praxis
+• Keine Werbung, kein Tracking, kein Verkauf von Daten
+• Volle Kontrolle über Ihre Daten
+
+🎯 FÜR WEN?
+• Logopädie-Praxen jeder Größe
+• Praxis-Inhaber, die ihre Wartelisten digitalisieren möchten
+• Teams, die gemeinsam Patienten verwalten
+
+💡 WARUM WARTELISTE PRO?
+Entwickelt in enger Zusammenarbeit mit einer echten Logopädie-Praxis. Jede Funktion löst ein konkretes Problem aus dem Praxis-Alltag. Modernes Material Design 3, intuitiv und auf Deutsch.
+
+📱 PLATTFORMEN
+WarteListe Pro ist verfügbar für Android, iOS und im Web. Alle Daten werden automatisch zwischen Ihren Geräten synchronisiert.
+
+🆓 KOSTENLOS STARTEN
+Registrieren Sie Ihre Praxis und legen Sie sofort los. Keine versteckten Kosten, keine Werbung.
+
+❓ FRAGEN?
+Bei Fragen oder Feedback erreichen Sie uns jederzeit unter: support@hasi-elektronic.de

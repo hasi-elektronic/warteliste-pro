@@ -1,0 +1,84 @@
+default_platform(:android)
+
+# ════════════════════════════════════════════════════════════════
+# WarteListe Pro - Fastlane Konfiguration
+# ════════════════════════════════════════════════════════════════
+#
+# Vor dem ersten Lauf benoetigt:
+#   1. Service-Account-JSON unter:
+#      android/fastlane/play-service-account.json
+#      (In Google Play Console → Setup → API access → neue Service
+#      Account erstellen und JSON herunterladen)
+#
+#   2. Der Service-Account muss in Play Console eingeladen und
+#      mit Release-Rechten ausgestattet werden.
+#
+#   3. Bundler installieren und Gems laden:
+#        gem install bundler
+#        cd android && bundle install
+#
+# Aufruf:
+#   cd android && bundle exec fastlane internal   # Internal Testing
+#   cd android && bundle exec fastlane beta       # Closed Beta
+#   cd android && bundle exec fastlane production # Production
+# ════════════════════════════════════════════════════════════════
+
+platform :android do
+  desc "Flutter AAB-Release bauen"
+  lane :build do
+    sh("cd ../.. && flutter build appbundle --release")
+  end
+
+  desc "Upload in Internal Testing Track"
+  lane :internal do
+    build
+    upload_to_play_store(
+      track: "internal",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: "draft"
+    )
+  end
+
+  desc "Upload in Closed Beta Track"
+  lane :beta do
+    build
+    upload_to_play_store(
+      track: "beta",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Upload in Production Track"
+  lane :production do
+    build
+    upload_to_play_store(
+      track: "production",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: "draft"
+    )
+  end
+
+  desc "Nur Metadata (Texte) aktualisieren, ohne neuen Build"
+  lane :metadata do
+    upload_to_play_store(
+      skip_upload_aab: true,
+      skip_upload_apk: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Metadata aus Play Store herunterladen"
+  lane :fetch_metadata do
+    sh("bundle exec fastlane supply init")
+  end
+end

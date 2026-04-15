@@ -1,0 +1,48 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "warteliste-pro",
+          "appId": "1:616144928236:android:4075d54d05ecf4874894c9",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "warteliste-pro",
+          "appId": "1:616144928236:ios:943f3e07e8bae46a4894c9",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "warteliste-pro",
+          "configurations": {
+            "android": "1:616144928236:android:4075d54d05ecf4874894c9",
+            "ios": "1:616144928236:ios:943f3e07e8bae46a4894c9",
+            "web": "1:616144928236:web:a7b0edc2dc609a354894c9"
+          }
+        }
+      }
+    }
+  }
+}
