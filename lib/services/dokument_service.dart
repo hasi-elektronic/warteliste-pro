@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -47,12 +48,19 @@ class DokumentService {
     final contentType =
         typ == DokumentTyp.pdf ? 'application/pdf' : 'image/jpeg';
 
+    // Firebase ID Token fuer Auth beim R2-Worker
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (idToken == null) {
+      throw Exception('Nicht angemeldet');
+    }
+
     // R2 Upload
     final url = await uploader.uploadToR2(
       baseUrl: r2Base,
       key: key,
       bytes: bytes,
       contentType: contentType,
+      idToken: idToken,
     );
 
     // Firestore-Eintrag
@@ -98,7 +106,10 @@ class DokumentService {
     required String url,
   }) async {
     try {
-      await uploader.deleteFromR2(url: url, baseUrl: r2Base);
+      final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+      if (idToken != null) {
+        await uploader.deleteFromR2(url: url, baseUrl: r2Base, idToken: idToken);
+      }
     } catch (_) {}
     await _dokumenteRef(praxisId, patientId).doc(dokumentId).delete();
   }

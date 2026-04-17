@@ -97,6 +97,13 @@ class FirebaseService {
           .get();
       if (existing.docs.isNotEmpty) {
         final praxisId = existing.docs.first.id;
+        final existingPraxis = existing.docs.first.data();
+        // Legacy Praxis: createdBy ggf. ergaenzen, wenn user Owner laut email ist
+        if ((existingPraxis['createdBy'] as String?)?.isEmpty ?? true) {
+          try {
+            await _praxenRef.doc(praxisId).update({'createdBy': user.uid});
+          } catch (_) {}
+        }
         await _usersRef.doc(user.uid).set({
           'email': email,
           'praxisId': praxisId,
@@ -118,6 +125,7 @@ class FirebaseService {
       name: 'Meine Praxis',
       email: email,
       createdAt: DateTime.now(),
+      createdBy: user.uid,
     );
     await praxisDoc.set(praxis.toFirestore());
 
@@ -173,6 +181,7 @@ class FirebaseService {
       name: praxisName.trim(),
       email: email.trim(),
       createdAt: DateTime.now(),
+      createdBy: uid,
     );
     await praxisDoc.set(praxis.toFirestore());
 
@@ -284,6 +293,7 @@ class FirebaseService {
       name: name.trim(),
       email: user.email ?? '',
       createdAt: DateTime.now(),
+      createdBy: user.uid,
     );
     await praxisDoc.set(praxis.toFirestore());
 
@@ -586,48 +596,31 @@ class FirebaseService {
       ..sort((a, b) => a.email.compareTo(b.email));
   }
 
+  /// Deterministische Invite-Dokument-ID fuer (email, praxisId).
+  /// Firestore IDs duerfen '@' und '.' enthalten; wir sanitisieren trotzdem.
+  String _inviteId(String normalizedEmail, String praxisId) {
+    final safeEmail = normalizedEmail
+        .replaceAll('/', '_')
+        .replaceAll('..', '__');
+    return '${praxisId}__$safeEmail';
+  }
+
   /// Fuegt einen neuen Mitarbeiter per E-Mail zu einem Standort hinzu.
   ///
-  /// Sucht zuerst, ob ein User mit dieser E-Mail existiert.
-  /// Falls ja: fuegt die praxisId zum praxisIds Array hinzu.
-  /// Falls nein: erstellt ein Einladungs-Dokument in /invites.
+  /// Erstellt IMMER ein Einladungs-Dokument (deterministische ID) — auch wenn
+  /// der User schon existiert. Der User lost es beim naechsten Login selbst
+  /// ein (redeemInvites). Direktes Schreiben auf andere User-Dokumente ist
+  /// durch Firestore-Rules untersagt.
   Future<bool> inviteMitarbeiter(String email, String praxisId) async {
     final normalizedEmail = email.trim().toLowerCase();
-
-    // Existierenden User suchen
-    final existing = await _usersRef
-        .where('email', isEqualTo: normalizedEmail)
-        .limit(1)
-        .get();
-
-    if (existing.docs.isNotEmpty) {
-      // User existiert bereits → Standort hinzufuegen + Rolle auf 'user' setzen
-      final userDoc = existing.docs.first;
-      final currentRole = userDoc.data()['role'] as String? ?? 'admin';
-
-      final updates = <String, dynamic>{
-        'praxisIds': FieldValue.arrayUnion([praxisId]),
-      };
-
-      // Nur Rolle setzen, wenn noch keine gesetzt ist
-      if (currentRole != 'admin') {
-        updates['role'] = 'user';
-      }
-
-      await _usersRef.doc(userDoc.id).update(updates);
-      return true;
-    }
-
-    // User existiert noch nicht → Einladung speichern
-    // Wenn der User sich registriert, wird die Einladung eingeloest
-    await _firestore.collection('invites').add({
+    final id = _inviteId(normalizedEmail, praxisId);
+    await _firestore.collection('invites').doc(id).set({
       'email': normalizedEmail,
       'praxisId': praxisId,
       'role': 'user',
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': currentUser?.uid,
     });
-
     return false;
   }
 
@@ -646,13 +639,20 @@ class FirebaseService {
 
     for (final invite in invites.docs) {
       final praxisId = invite.data()['praxisId'] as String?;
-      if (praxisId != null) {
+      if (praxisId == null) continue;
+      try {
+        // 1) praxisId zu eigenem praxisIds-Array hinzufuegen (genau 1 pro Update,
+        //    damit Firestore-Rules gegen Invite validieren koennen).
         await _usersRef.doc(user.uid).update({
           'praxisIds': FieldValue.arrayUnion([praxisId]),
         });
+        // 2) Invite erst NACH erfolgreichem Update loeschen
+        await invite.reference.delete();
+      } catch (e) {
+        // Wenn Update fehlschlaegt (Rule-Verletzung), Invite stehen lassen.
+        // ignore: avoid_print
+        print('Invite konnte nicht eingeloest werden: $e');
       }
-      // Einladung loeschen
-      await invite.reference.delete();
     }
   }
 

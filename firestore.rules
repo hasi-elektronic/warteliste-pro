@@ -1,64 +1,209 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Benutzer-Mapping: nur der eigene Datensatz lesbar/schreibbar
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+    // ================= Helpers =================
+    function signedIn() {
+      return request.auth != null;
     }
 
-    // Invites: jeder eingeloggte User darf lesen (um eigene Einladungen zu finden)
-    // Schreiben nur fuer Praxis-Admins (wird im Code geprueft)
-    match /invites/{inviteId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null;
+    function isSelf(userId) {
+      return signedIn() && request.auth.uid == userId;
     }
 
-    // Praxis: nur Mitglieder (User mit passender praxisId/praxisIds) duerfen lesen/schreiben
-    match /praxen/{praxisId} {
-      allow read: if request.auth != null && isPraxisMember(praxisId);
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && isPraxisMember(praxisId);
-
-      // Patienten: nur Praxis-Mitglieder
-      match /patienten/{patientId} {
-        allow read, write: if request.auth != null && isPraxisMember(praxisId);
-
-        // Notizen/Anrufe: Subcollection der Patienten
-        match /notizen/{noteId} {
-          allow read, write: if request.auth != null && isPraxisMember(praxisId);
-        }
-
-        // Dokumente: Subcollection der Patienten
-        match /dokumente/{dokumentId} {
-          allow read, write: if request.auth != null && isPraxisMember(praxisId);
-        }
-      }
-
-      // Therapeuten/Behandler: nur Praxis-Mitglieder
-      match /therapeuten/{therapeutId} {
-        allow read, write: if request.auth != null && isPraxisMember(praxisId);
-      }
-
-      // Termine: nur Praxis-Mitglieder
-      match /termine/{terminId} {
-        allow read, write: if request.auth != null && isPraxisMember(praxisId);
-      }
-
-      // FCM Tokens: nur Praxis-Mitglieder
-      match /tokens/{tokenId} {
-        allow read, write: if request.auth != null && isPraxisMember(praxisId);
-      }
+    // Deterministische Invite-Doc-ID: {praxisId}__{normalizedEmail}
+    function inviteIdFor(praxisId, email) {
+      return praxisId + '__' + email.lower();
     }
 
-    // Hilfsfunktion: Prueft ob der User zur Praxis gehoert (unterstuetzt praxisId und praxisIds)
+    function hasMatchingInvite(praxisId, email) {
+      return exists(
+        /databases/$(database)/documents/invites/$(inviteIdFor(praxisId, email))
+      );
+    }
+
+    function isPraxisOwnedBy(praxisId, uid) {
+      return exists(/databases/$(database)/documents/praxen/$(praxisId))
+        && get(/databases/$(database)/documents/praxen/$(praxisId))
+             .data.get('createdBy', '') == uid;
+    }
+
+    // Mitgliedschaft: users/{uid}.praxisIds ist Quelle der Wahrheit, weil
+    // Schreibzugriff auf dieses Feld via Regeln streng gated ist
+    // (Hinzufuegen erfordert Ownership oder Invite).
     function isPraxisMember(praxisId) {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+      let userRef = /databases/$(database)/documents/users/$(request.auth.uid);
+      return signedIn()
+        && exists(userRef)
         && (
-          userDoc.data.praxisId == praxisId
-          || (userDoc.data.keys().hasAny(['praxisIds']) && praxisId in userDoc.data.praxisIds)
+          get(userRef).data.get('praxisId', '') == praxisId
+          || praxisId in get(userRef).data.get('praxisIds', [])
         );
+    }
+
+    // Prueft, ob ein einzelner praxisId-Eintrag fuer den User zulaessig ist.
+    // Entweder: schon vorher im Dokument (=> war legitim), ODER
+    // der User hat die Praxis erstellt, ODER er hat ein passendes Invite.
+    function praxisEntryAllowed(pid, beforeList, uid, email) {
+      return pid in beforeList
+        || isPraxisOwnedBy(pid, uid)
+        || hasMatchingInvite(pid, email);
+    }
+
+    // Jede praxisId in der afterList muss zulaessig sein.
+    // Enumeration bis max. 10 Eintraege (harte Grenze pro Dokument).
+    function eachPraxisIdAllowed(afterList, beforeList, uid, email) {
+      let n = afterList.size();
+      return n <= 10
+        && (n < 1 || praxisEntryAllowed(afterList[0], beforeList, uid, email))
+        && (n < 2 || praxisEntryAllowed(afterList[1], beforeList, uid, email))
+        && (n < 3 || praxisEntryAllowed(afterList[2], beforeList, uid, email))
+        && (n < 4 || praxisEntryAllowed(afterList[3], beforeList, uid, email))
+        && (n < 5 || praxisEntryAllowed(afterList[4], beforeList, uid, email))
+        && (n < 6 || praxisEntryAllowed(afterList[5], beforeList, uid, email))
+        && (n < 7 || praxisEntryAllowed(afterList[6], beforeList, uid, email))
+        && (n < 8 || praxisEntryAllowed(afterList[7], beforeList, uid, email))
+        && (n < 9 || praxisEntryAllowed(afterList[8], beforeList, uid, email))
+        && (n < 10 || praxisEntryAllowed(afterList[9], beforeList, uid, email));
+    }
+
+    // ================= /users/{userId} =================
+    match /users/{userId} {
+      allow read: if isSelf(userId);
+
+      allow create: if isSelf(userId)
+        && request.resource.data.get('email', '') == request.auth.token.email
+        && eachPraxisIdAllowed(
+             request.resource.data.get('praxisIds', []),
+             [],
+             request.auth.uid,
+             request.auth.token.email
+           )
+        && (
+          !('praxisId' in request.resource.data)
+          || request.resource.data.praxisId == ''
+          || praxisEntryAllowed(
+               request.resource.data.praxisId,
+               request.resource.data.get('praxisIds', []),
+               request.auth.uid,
+               request.auth.token.email
+             )
+        );
+
+      // UPDATE kritisch: role darf nicht veraendert werden (nur via Admin-
+      // Prozess, den wir nicht mehr client-seitig erlauben). email darf
+      // auch nicht veraendert werden. praxisIds/praxisId jeder Eintrag
+      // muss autorisiert sein.
+      allow update: if isSelf(userId)
+        && request.resource.data.get('email', '') == resource.data.get('email', '')
+        && request.resource.data.get('role', 'admin') == resource.data.get('role', 'admin')
+        && eachPraxisIdAllowed(
+             request.resource.data.get('praxisIds', []),
+             resource.data.get('praxisIds', []),
+             request.auth.uid,
+             request.auth.token.email
+           )
+        && (
+          !('praxisId' in request.resource.data)
+          || request.resource.data.praxisId == ''
+          || praxisEntryAllowed(
+               request.resource.data.praxisId,
+               resource.data.get('praxisIds', []),
+               request.auth.uid,
+               request.auth.token.email
+             )
+          || request.resource.data.praxisId in request.resource.data.get('praxisIds', [])
+        );
+
+      // Self-delete erlaubt (z.B. Account-Loeschung)
+      allow delete: if isSelf(userId);
+    }
+
+    // ================= /invites/{inviteId} =================
+    match /invites/{inviteId} {
+      // Read: Empfaenger (per email) ODER Owner der Praxis
+      allow read: if signedIn()
+        && (
+          resource.data.get('email', '') == request.auth.token.email
+          || isPraxisOwnedBy(resource.data.get('praxisId', ''), request.auth.uid)
+        );
+
+      // Create: nur Owner der Ziel-Praxis; deterministische ID erzwingen
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll(['email', 'praxisId'])
+        && isPraxisOwnedBy(request.resource.data.praxisId, request.auth.uid)
+        && inviteId == inviteIdFor(
+             request.resource.data.praxisId,
+             request.resource.data.email
+           );
+
+      allow update: if false;
+
+      // Delete: Empfaenger (nach Einloesung) ODER Praxis-Owner
+      allow delete: if signedIn()
+        && (
+          resource.data.get('email', '') == request.auth.token.email
+          || isPraxisOwnedBy(resource.data.get('praxisId', ''), request.auth.uid)
+        );
+    }
+
+    // ================= /praxen/{praxisId} =================
+    match /praxen/{praxisId} {
+      // Read: Mitglieder ODER Legacy-Selbst-Claim (praxis ohne createdBy,
+      // Email gleicht auth.token.email).
+      allow read: if isPraxisMember(praxisId)
+        || (
+          signedIn()
+          && resource.data.get('createdBy', '') == ''
+          && resource.data.get('email', '') == request.auth.token.email
+        );
+
+      // Create: nur mit createdBy == auth.uid
+      allow create: if signedIn()
+        && request.resource.data.get('createdBy', '') == request.auth.uid;
+
+      // Update:
+      //  (1) Mitglied; createdBy bleibt unveraendert, ODER
+      //  (2) Selbst-Claim: legacy Praxis ohne createdBy, Email matcht,
+      //      nur das Feld createdBy darf sich aendern.
+      allow update: if (
+          isPraxisMember(praxisId)
+          && request.resource.data.get('createdBy', '') ==
+             resource.data.get('createdBy', '')
+        )
+        || (
+          signedIn()
+          && resource.data.get('createdBy', '') == ''
+          && resource.data.get('email', '') == request.auth.token.email
+          && request.resource.data.get('createdBy', '') == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['createdBy'])
+        );
+
+      allow delete: if isPraxisOwnedBy(praxisId, request.auth.uid);
+
+      // ------- Subcollections (nur Mitglieder) -------
+      match /patienten/{patientId} {
+        allow read, write: if isPraxisMember(praxisId);
+
+        match /notizen/{noteId} {
+          allow read, write: if isPraxisMember(praxisId);
+        }
+        match /dokumente/{dokumentId} {
+          allow read, write: if isPraxisMember(praxisId);
+        }
+      }
+
+      match /therapeuten/{therapeutId} {
+        allow read, write: if isPraxisMember(praxisId);
+      }
+
+      match /termine/{terminId} {
+        allow read, write: if isPraxisMember(praxisId);
+      }
+
+      match /tokens/{tokenId} {
+        allow read, write: if isPraxisMember(praxisId);
+      }
     }
   }
 }

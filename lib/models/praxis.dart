@@ -8,6 +8,7 @@ class Praxis {
   final String telefon;
   final String email;
   final DateTime createdAt;
+  final String createdBy;
 
   const Praxis({
     required this.id,
@@ -17,6 +18,7 @@ class Praxis {
     this.telefon = '',
     this.email = '',
     required this.createdAt,
+    this.createdBy = '',
   });
 
   factory Praxis.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -31,6 +33,7 @@ class Praxis {
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
+      createdBy: data['createdBy'] as String? ?? '',
     );
   }
 
@@ -42,6 +45,7 @@ class Praxis {
       'telefon': telefon,
       'email': email,
       'createdAt': Timestamp.fromDate(createdAt),
+      if (createdBy.isNotEmpty) 'createdBy': createdBy,
     };
   }
 
@@ -53,6 +57,7 @@ class Praxis {
     String? telefon,
     String? email,
     DateTime? createdAt,
+    String? createdBy,
   }) {
     return Praxis(
       id: id ?? this.id,
@@ -62,6 +67,7 @@ class Praxis {
       telefon: telefon ?? this.telefon,
       email: email ?? this.email,
       createdAt: createdAt ?? this.createdAt,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
 

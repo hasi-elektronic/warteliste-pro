@@ -8,12 +8,14 @@ Future<String> uploadToR2({
   required String key,
   required Uint8List bytes,
   required String contentType,
+  required String idToken,
 }) async {
   final url = '$baseUrl/upload?key=$key';
 
   final request = html.HttpRequest();
   request.open('POST', url);
   request.setRequestHeader('Content-Type', contentType);
+  request.setRequestHeader('Authorization', 'Bearer $idToken');
 
   final completer = Future<String>.delayed(Duration.zero, () async {
     request.send(html.Blob([bytes]));
@@ -30,10 +32,15 @@ Future<String> uploadToR2({
   return completer;
 }
 
-Future<void> deleteFromR2({required String url, required String baseUrl}) async {
+Future<void> deleteFromR2({
+  required String url,
+  required String baseUrl,
+  required String idToken,
+}) async {
   final key = url.replaceFirst('$baseUrl/file/', '');
   final request = html.HttpRequest();
   request.open('DELETE', '$baseUrl/file/$key');
+  request.setRequestHeader('Authorization', 'Bearer $idToken');
   request.send();
   await request.onLoadEnd.first;
 }

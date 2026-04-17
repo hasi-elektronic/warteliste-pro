@@ -7,19 +7,30 @@ Future<String> uploadToR2({
   required String key,
   required Uint8List bytes,
   required String contentType,
+  required String idToken,
 }) async {
   final response = await http.post(
     Uri.parse('$baseUrl/upload?key=$key'),
-    headers: {'Content-Type': contentType},
+    headers: {
+      'Content-Type': contentType,
+      'Authorization': 'Bearer $idToken',
+    },
     body: bytes,
   );
   if (response.statusCode != 200) {
-    throw Exception('Upload fehlgeschlagen: ${response.statusCode}');
+    throw Exception('Upload fehlgeschlagen: ${response.statusCode} ${response.body}');
   }
   return '$baseUrl/file/$key';
 }
 
-Future<void> deleteFromR2({required String url, required String baseUrl}) async {
+Future<void> deleteFromR2({
+  required String url,
+  required String baseUrl,
+  required String idToken,
+}) async {
   final key = url.replaceFirst('$baseUrl/file/', '');
-  await http.delete(Uri.parse('$baseUrl/file/$key'));
+  await http.delete(
+    Uri.parse('$baseUrl/file/$key'),
+    headers: {'Authorization': 'Bearer $idToken'},
+  );
 }
