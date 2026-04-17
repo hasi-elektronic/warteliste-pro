@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/patienten_provider.dart';
 import '../../providers/standort_provider.dart';
 import '../../utils/theme.dart';
+import '../../widgets/app_header.dart';
 import '../../widgets/kpi_card.dart';
 import '../../widgets/standort_switcher.dart';
 import '../../widgets/web_layout.dart';
@@ -38,44 +39,56 @@ class DashboardScreen extends ConsumerWidget {
     final isAdmin = ref.watch(isAdminProvider);
     final aktivePraxis = ref.watch(aktivesPraxisProvider);
     final s = S.of(context);
-    final titles = [s.appName, s.navWarteliste, s.navStatistik, s.navEinstellungen];
+    final titles = [s.navDashboard, s.navWarteliste, s.navStatistik, s.navEinstellungen];
+    final icons = [Icons.dashboard_outlined, Icons.list_alt_outlined, Icons.bar_chart_outlined, Icons.settings_outlined];
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        titleSpacing: 12,
-        title: Text(
-          titles[currentIndex],
-          style: const TextStyle(fontSize: 15),
-          overflow: TextOverflow.ellipsis,
-        ),
+      appBar: AppHeader(
+        title: titles[currentIndex],
+        icon: icons[currentIndex],
         actions: [
-          // Nicht-Admin: Standort-Name
+          // Nicht-Admin: Standort-Name als Chip
           if (!isAdmin && aktivePraxis != null)
             Padding(
               padding: const EdgeInsets.only(right: 4),
-              child: Chip(
-                avatar: Icon(Icons.location_on, size: 14, color: Colors.grey.shade600),
-                label: Text(
-                  aktivePraxis.name,
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.slate100,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppTheme.slate300, width: 1),
                 ),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.location_on_outlined,
+                        size: 14, color: AppTheme.slate600),
+                    const SizedBox(width: 4),
+                    Text(
+                      aktivePraxis.name,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.slate700,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          if (currentIndex == 0)
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(s.dashboardKeineBenachrichtigungen),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-              tooltip: s.dashboardBenachrichtigungen,
-            ),
+          const SizedBox(width: 4),
+          HeaderIconAction(
+            icon: Icons.notifications_outlined,
+            tooltip: s.dashboardBenachrichtigungen,
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(s.dashboardKeineBenachrichtigungen),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: IndexedStack(
@@ -627,7 +640,102 @@ class _DashboardBody extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: 60), // Platz fuer FAB
+
+          // ── Laengste Wartezeiten (Top 5) ──
+          if (wartende.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Text(
+                  'Längste Wartezeiten',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => _openWarteliste(ref, 1),
+                  child: const Text('Alle anzeigen →'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: Column(
+                children: [
+                  ...((wartende.toList()
+                        ..sort((a, b) => b.wartezeitInTagen
+                            .compareTo(a.wartezeitInTagen)))
+                      .take(5)
+                      .map((p) => _PatientListItem(
+                            patient: p,
+                            onTap: () => Navigator.of(context).pushNamed(
+                                '/patient/detail',
+                                arguments: p),
+                          ))),
+                ],
+              ),
+            ),
+          ],
+
+          // ── Schnellzugriffe ──
+          const SizedBox(height: 24),
+          Text(
+            'Schnellzugriffe',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 8),
+          LayoutBuilder(
+            builder: (ctx, bc) {
+              final twoCol = bc.maxWidth > 500;
+              final items = <_QuickAction>[
+                _QuickAction(
+                  icon: Icons.person_add_outlined,
+                  label: 'Neuer Patient',
+                  color: AppTheme.primaryColor,
+                  onTap: () => Navigator.of(context).pushNamed('/patient/neu'),
+                ),
+                _QuickAction(
+                  icon: Icons.list_alt_outlined,
+                  label: 'Warteliste',
+                  color: AppTheme.statusWartend,
+                  onTap: () => _openWarteliste(ref, 0),
+                ),
+                _QuickAction(
+                  icon: Icons.bar_chart_outlined,
+                  label: 'Statistik',
+                  color: AppTheme.accentColor,
+                  onTap: () => ref
+                      .read(dashboardNavIndexProvider.notifier)
+                      .state = 2,
+                ),
+                _QuickAction(
+                  icon: Icons.settings_outlined,
+                  label: 'Einstellungen',
+                  color: AppTheme.slate600,
+                  onTap: () => ref
+                      .read(dashboardNavIndexProvider.notifier)
+                      .state = 3,
+                ),
+              ];
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: items
+                    .map((a) => SizedBox(
+                          width: twoCol
+                              ? (bc.maxWidth - 8) / 2
+                              : bc.maxWidth,
+                          child: a,
+                        ))
+                    .toList(),
+              );
+            },
+          ),
+
+          const SizedBox(height: 80), // Platz fuer FAB
         ],
       ),
     );
@@ -658,4 +766,203 @@ class _MonatDaten {
   final int anzahl;
 
   const _MonatDaten({required this.label, required this.anzahl});
+}
+
+/// Kompakter Listen-Eintrag mit Hover fuer einen wartenden Patient.
+class _PatientListItem extends StatefulWidget {
+  final Patient patient;
+  final VoidCallback onTap;
+
+  const _PatientListItem({required this.patient, required this.onTap});
+
+  @override
+  State<_PatientListItem> createState() => _PatientListItemState();
+}
+
+class _PatientListItemState extends State<_PatientListItem> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.patient;
+    final tage = p.wartezeitInTagen;
+    final isKritisch = tage > 180;
+    final isLang = tage > 90;
+    final color = isKritisch
+        ? AppTheme.errorColor
+        : isLang
+            ? AppTheme.warningColor
+            : AppTheme.slate600;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        color: _hover ? AppTheme.slate50 : Colors.white,
+        child: InkWell(
+          onTap: widget.onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        p.vollstaendigerName,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        p.stoerungsbild,
+                        style: Theme.of(context).textTheme.bodySmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: color.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    '$tage Tage',
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelSmall
+                        ?.copyWith(color: color, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.chevron_right,
+                    color: _hover ? AppTheme.primaryColor : AppTheme.slate400,
+                    size: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Schnellzugriff-Kachel mit Hover.
+class _QuickAction extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  State<_QuickAction> createState() => _QuickActionState();
+}
+
+class _QuickActionState extends State<_QuickAction> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: _hover
+              ? widget.color.withValues(alpha: 0.06)
+              : Colors.white,
+          border: Border.all(
+            color: _hover
+                ? widget.color.withValues(alpha: 0.5)
+                : AppTheme.slate300,
+            width: 1,
+          ),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.slate900
+                  .withValues(alpha: _hover ? 0.10 : 0.04),
+              blurRadius: _hover ? 10 : 4,
+              offset: Offset(0, _hover ? 3 : 1),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(10),
+            hoverColor: Colors.transparent,
+            splashColor: widget.color.withValues(alpha: 0.1),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: widget.color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(widget.icon, color: widget.color, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      widget.label,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward,
+                      color: _hover
+                          ? widget.color
+                          : AppTheme.slate400,
+                      size: 18),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

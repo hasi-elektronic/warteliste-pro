@@ -426,10 +426,8 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
     final isAdmin = ref.watch(isAdminProvider);
     final s = S.of(context);
 
+    // Keine eigene AppBar — wird vom DashboardScreen (AppHeader) gestellt.
     return Scaffold(
-      appBar: AppBar(
-        title: Text(s.einstellungenTitel),
-      ),
       body: _praxisLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

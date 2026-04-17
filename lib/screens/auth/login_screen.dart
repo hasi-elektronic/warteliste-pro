@@ -121,8 +121,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Text(
                     'Wartelisten-Verwaltung fuer Ihre Praxis',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey.shade500,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.slate500,
                         ),
                   ),
                   const SizedBox(height: 32),

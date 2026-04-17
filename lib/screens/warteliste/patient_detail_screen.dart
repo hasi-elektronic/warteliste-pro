@@ -13,6 +13,7 @@ import '../../models/patient_note.dart';
 import '../../providers/patienten_provider.dart';
 import '../../services/dokument_service.dart';
 import '../../utils/theme.dart';
+import '../../widgets/app_header.dart';
 import '../../widgets/status_badge.dart';
 
 /// Detail-Ansicht eines einzelnen Patienten.
@@ -44,19 +45,22 @@ class PatientDetailScreen extends ConsumerWidget {
     final dateFormat = DateFormat('dd.MM.yyyy');
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(livePatient.vollstaendigerName),
+      appBar: AppHeader(
+        title: livePatient.vollstaendigerName,
+        icon: Icons.person_outline,
+        showBackButton: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () {
+          HeaderIconAction(
+            icon: Icons.edit_outlined,
+            tooltip: 'Bearbeiten',
+            onTap: () {
               Navigator.of(context).pushNamed(
                 '/patient/bearbeiten',
                 arguments: livePatient,
               );
             },
-            tooltip: 'Bearbeiten',
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: SingleChildScrollView(

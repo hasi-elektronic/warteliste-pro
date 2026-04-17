@@ -71,29 +71,36 @@ class _WartelisteAppState extends ConsumerState<WartelisteApp> {
       builder: (context, child) {
         // Responsive Web Layout:
         // < 600px: full width (Mobil)
-        // 600-1200px: zentriert mit max 600px + leichter Rahmen
-        // > 1200px: zentriert mit max 800px
+        // 600-1400px: zentriert mit max 720px
+        // > 1400px: zentriert mit max 1040px
         final width = MediaQuery.of(context).size.width;
 
         if (width <= 600 || child == null) {
           return child ?? const SizedBox();
         }
 
-        final maxW = width > 1400 ? 1000.0 : width > 900 ? 800.0 : 600.0;
+        final maxW = width > 1400 ? 1040.0 : width > 900 ? 820.0 : 680.0;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final outerBg = isDark ? const Color(0xFF020617) : AppTheme.slate200;
+        final borderColor = isDark ? const Color(0xFF1F2937) : AppTheme.slate300;
 
         return Container(
-          color: const Color(0xFFF5F5F5),
+          color: outerBg,
           child: Center(
             child: Container(
               constraints: BoxConstraints(maxWidth: maxW),
               decoration: BoxDecoration(
                 color: Theme.of(context).scaffoldBackgroundColor,
                 border: Border.symmetric(
-                  vertical: BorderSide(
-                    color: Colors.grey.shade300,
-                    width: 1,
-                  ),
+                  vertical: BorderSide(color: borderColor, width: 1),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.slate900.withValues(alpha: 0.06),
+                    blurRadius: 24,
+                    offset: const Offset(0, 0),
+                  ),
+                ],
               ),
               child: child,
             ),

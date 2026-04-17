@@ -7,6 +7,7 @@ import '../../models/patient.dart';
 import '../../providers/patienten_provider.dart';
 import '../../utils/constants.dart';
 import '../../utils/theme.dart';
+import '../../widgets/app_header.dart';
 
 /// Formular zum Erstellen oder Bearbeiten eines Patienten.
 ///
@@ -234,8 +235,10 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
     final isDe = s.isGerman;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? s.patientBearbeitenTitel : s.patientNeuerTitel),
+      appBar: AppHeader(
+        title: _isEditing ? s.patientBearbeitenTitel : s.patientNeuerTitel,
+        icon: _isEditing ? Icons.edit_outlined : Icons.person_add_outlined,
+        showBackButton: true,
       ),
       body: Form(
         key: _formKey,
