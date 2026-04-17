@@ -35,9 +35,6 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(dashboardNavIndexProvider);
-    final hatMehrere = ref.watch(hatMehrereStandorteProvider);
-    final isAdmin = ref.watch(isAdminProvider);
-    final aktivePraxis = ref.watch(aktivesPraxisProvider);
     final s = S.of(context);
     final titles = [s.navDashboard, s.navWarteliste, s.navStatistik, s.navEinstellungen];
     final icons = [Icons.dashboard_outlined, Icons.list_alt_outlined, Icons.bar_chart_outlined, Icons.settings_outlined];
@@ -46,36 +43,6 @@ class DashboardScreen extends ConsumerWidget {
         title: titles[currentIndex],
         icon: icons[currentIndex],
         actions: [
-          // Nicht-Admin: Standort-Name als Chip
-          if (!isAdmin && aktivePraxis != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.slate100,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppTheme.slate300, width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.location_on_outlined,
-                        size: 14, color: AppTheme.slate600),
-                    const SizedBox(width: 4),
-                    Text(
-                      aktivePraxis.name,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.slate700,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          const SizedBox(width: 4),
           HeaderIconAction(
             icon: Icons.notifications_outlined,
             tooltip: s.dashboardBenachrichtigungen,
@@ -304,7 +271,7 @@ class _DashboardBody extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
 
-          // ── Zweite KPI-Zeile ──
+          // ── Zweite KPI-Zeile: immer 3 Karten (Symmetrie) ──
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -319,17 +286,42 @@ class _DashboardBody extends ConsumerWidget {
                         : AppTheme.primaryColor,
                   ),
                 ),
-                if (dringend > 0)
-                  Expanded(
-                    child: KpiCard(
-                      title: S.of(context).prioritaetDringend,
-                      value: '$dringend',
-                      icon: Icons.priority_high,
-                      color: AppTheme.errorColor,
-                      onTap: () => _openWarteliste(ref, 1),
-                    ),
+                Expanded(
+                  child: KpiCard(
+                    title: 'Lange wartend',
+                    value: '${langeWartend.length}',
+                    icon: Icons.schedule_outlined,
+                    color: kritischWartend > 0
+                        ? AppTheme.errorColor
+                        : (langeWartend.isNotEmpty
+                            ? AppTheme.warningColor
+                            : AppTheme.slate500),
+                    onTap: langeWartend.isNotEmpty
+                        ? () => _openWarteliste(ref, 1)
+                        : null,
                   ),
-                if (dringend == 0) const Expanded(child: SizedBox()),
+                ),
+                Expanded(
+                  child: KpiCard(
+                    title: dringend > 0
+                        ? S.of(context).prioritaetDringend
+                        : 'Rezept läuft ab',
+                    value: dringend > 0
+                        ? '$dringend'
+                        : '${rezeptWarnungen.length}',
+                    icon: dringend > 0
+                        ? Icons.priority_high
+                        : Icons.receipt_long_outlined,
+                    color: dringend > 0
+                        ? AppTheme.errorColor
+                        : (rezeptWarnungen.isNotEmpty
+                            ? AppTheme.warningColor
+                            : AppTheme.slate500),
+                    onTap: (dringend > 0 || rezeptWarnungen.isNotEmpty)
+                        ? () => _openWarteliste(ref, 1)
+                        : null,
+                  ),
+                ),
               ],
             ),
           ),

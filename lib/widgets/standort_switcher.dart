@@ -27,7 +27,54 @@ class _StandortSwitcherState extends ConsumerState<StandortSwitcher> {
     final aktivePraxis = ref.watch(aktivesPraxisProvider);
     final standorteAsync = ref.watch(standorteProvider);
 
-    if (!isAdmin) return const SizedBox.shrink();
+    // Nicht-Admin: einfaches, schreibgeschuetztes Banner (kein Switch)
+    if (!isAdmin) {
+      if (aktivePraxis == null) return const SizedBox.shrink();
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.slate100,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppTheme.slate300, width: 1),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.location_on_outlined,
+                size: 16, color: AppTheme.slate600),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                aktivePraxis.name,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.slate800,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (aktivePraxis.adresse.isNotEmpty) ...[
+              Container(
+                width: 1, height: 14,
+                color: AppTheme.slate300,
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              Flexible(
+                child: Text(
+                  aktivePraxis.adresse,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.slate600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
     if (aktivePraxis == null) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),

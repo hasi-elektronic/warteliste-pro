@@ -51,5 +51,7 @@
 	<string>WarteListe Pro benötigt Zugriff auf die Kamera, um Dokumente zu scannen.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>WarteListe Pro benötigt Zugriff auf das Mikrofon für Sprachnotizen.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

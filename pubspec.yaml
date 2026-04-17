@@ -1,7 +1,7 @@
 name: warteliste_pro
 description: "WarteListe Pro - Wartelisten-Management für Logopädie-Praxen"
 publish_to: 'none'
-version: 1.5.1+22
+version: 1.5.1+23
 
 environment:
   sdk: ^3.7.2
