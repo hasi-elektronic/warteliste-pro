@@ -112,7 +112,8 @@ fi
 # ====== iOS ======
 if [ "$ONLY_ANDROID" = "0" ]; then
   step "5/7 iOS — IPA build"
-  flutter build ipa --release
+  # ios/ExportOptions.plist kullan: manual signing, "WarteListe Pro AppStore" profile
+  flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
   IPA=$(find build/ios/ipa -name "*.ipa" -type f 2>/dev/null | head -1)
   [ -f "$IPA" ] || err "IPA nicht gefunden in build/ios/ipa/"
   SIZE=$(du -h "$IPA" | cut -f1)
