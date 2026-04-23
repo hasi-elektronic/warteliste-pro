@@ -64,9 +64,16 @@ python3 scripts/upload_to_play.py build/app/outputs/bundle/release/app-release.a
 ```
 
 ## Aktuelle Version
-- pubspec.yaml: version 1.4.0+16
+- pubspec.yaml: version **1.5.1+23**
 
-## Version 1.4.0 Neue Features
+## Version 1.5.1 Änderungen (seit 1.4.0)
+- iOS Compliance: NSCameraUsageDescription + NSMicrophoneUsageDescription entfernt (nicht verwendet, App-Review-Risiko)
+- ITSAppUsesNonExemptEncryption = false (Export Compliance)
+- Dashboard UI Verbesserungen
+- Design-Refresh + Web-Branding
+- Security Hardening: R2 Worker Auth + Firestore Self-Elevation Fix
+
+## Version 1.4.0 Features (historisch)
 - Rezept-Verwaltung (Datum, Gueltig bis, Verordnungsmenge, Ablauf-Warnungen)
 - Patienten-Prioritaet (Normal, Hoch, Dringend)
 - Kontakt-Tracking (letzter Kontakt, ueberfaellig-Warnung >30 Tage)
@@ -78,5 +85,9 @@ python3 scripts/upload_to_play.py build/app/outputs/bundle/release/app-release.a
 
 ## Nächste Schritte
 - Push Notifications (FCM) implementierung
-- App Icon iyilestirme (adaptive icon white background fix)
+- App Icon: adaptive icon white background fix
 - Therapeut-Kapazitaet Dashboard Widget
+- Große Screen-Dateien aufteilen (einstellungen_screen.dart 1740 lines, patient_detail_screen.dart 1502 lines)
+- Test Coverage erhöhen (aktuell ~2%, Placeholder test)
+- StreamProvider'a autoDispose eklenmesi (Memory Leak-Vermeidung)
+- go_router Migration (paket installiert, aber Navigator 1.0 aktiv)

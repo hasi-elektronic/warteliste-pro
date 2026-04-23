@@ -1,0 +1,198 @@
+name: Release (Android + iOS)
+
+# Tetikleme: sadece version tag'inde (v1.5.1+23 gibi)
+# Kontrolü elinde tutmak için: git tag v1.5.2+24 && git push --tags
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      track:
+        description: 'Play Store track'
+        required: true
+        default: 'internal'
+        type: choice
+        options: [internal, alpha, beta, production]
+
+env:
+  FLUTTER_VERSION: '3.27.0'
+  PACKAGE_NAME: 'com.hasielektronic.warteliste_pro'
+
+jobs:
+  # ─────────────────────────────────────────────
+  # iOS build + upload to App Store Connect (TestFlight)
+  # ─────────────────────────────────────────────
+  ios:
+    name: iOS → TestFlight
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Show versions
+        run: |
+          flutter --version
+          xcodebuild -version
+
+      - name: Setup Apple API key
+        env:
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$APPLE_API_KEY_BASE64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APPLE_KEY_ID }}.p8
+          chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APPLE_KEY_ID }}.p8
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Import Apple certs + provisioning profiles
+        # fastlane match kurulumu varsa onu kullan, yoksa manuel sertifika
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.IOS_DIST_CERT_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+        run: |
+          if [ -z "$BUILD_CERTIFICATE_BASE64" ]; then
+            echo "::warning::iOS signing secrets not configured — using automatic signing"
+            exit 0
+          fi
+
+          CERT_PATH=$RUNNER_TEMP/dist.p12
+          PP_PATH=$RUNNER_TEMP/profile.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERT_PATH
+          echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security import $CERT_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+
+      - name: Build IPA
+        run: flutter build ipa --release
+
+      - name: Upload to App Store Connect (TestFlight)
+        env:
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+        run: |
+          IPA=$(find build/ios/ipa -name "*.ipa" -type f | head -1)
+          echo "IPA: $IPA"
+          xcrun altool --upload-app --type ios \
+            --file "$IPA" \
+            --apiKey "$APPLE_KEY_ID" \
+            --apiIssuer "$APPLE_ISSUER_ID"
+
+      - name: Assign to hasi internal TestFlight group
+        continue-on-error: true
+        run: |
+          sleep 60  # Build App Store Connect'te processing bekle
+          pip3 install pyjwt requests cryptography
+          python3 scripts/check_testflight.py || true
+
+      - name: Upload IPA artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: build/ios/ipa/*.ipa
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # Android build + upload to Google Play
+  # ─────────────────────────────────────────────
+  android:
+    name: Android → Play Console
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Setup Android signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::Android signing secrets not configured — build will fail or use debug signing"
+            exit 0
+          fi
+          echo -n "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          echo "$KEY_PROPERTIES" > android/key.properties
+
+      - name: Build AAB
+        run: flutter build appbundle --release
+
+      - name: Setup Google Play Service Account
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          mkdir -p ~/.config/play-publisher
+          echo "$PLAY_SERVICE_ACCOUNT_JSON" > ~/.config/play-publisher/warteliste-pro-key.json
+
+      - name: Install Python deps for upload
+        run: pip3 install google-api-python-client google-auth
+
+      - name: Upload to Play Console
+        env:
+          TRACK: ${{ inputs.track || 'internal' }}
+        run: |
+          python3 scripts/upload_to_play.py \
+            build/app/outputs/bundle/release/app-release.aab \
+            --track "$TRACK" --status draft
+
+      - name: Upload AAB artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: build/app/outputs/bundle/release/*.aab
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # Bildirim: iki iş de bittikten sonra rapor
+  # ─────────────────────────────────────────────
+  notify:
+    name: Notify
+    needs: [ios, android]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## Release ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- iOS: ${{ needs.ios.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Android: ${{ needs.android.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Artefakte sind 30 Tage in den Job-Details verfügbar." >> $GITHUB_STEP_SUMMARY

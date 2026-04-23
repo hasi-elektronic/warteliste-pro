@@ -57,3 +57,7 @@ build/
 scripts/node_modules/
 r2-worker/node_modules/
 *.mobileprovision
+
+# Agent army raporları (operasyonel, her review'da yenilenir)
+_agent-reports/
+_release-logs/

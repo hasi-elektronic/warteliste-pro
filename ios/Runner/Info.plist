@@ -46,11 +46,7 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>WarteListe Pro benötigt Zugriff auf Ihre Fotobibliothek, um Excel-Dateien zu importieren.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>WarteListe Pro benötigt Zugriff auf die Kamera, um Dokumente zu scannen.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>WarteListe Pro benötigt Zugriff auf das Mikrofon für Sprachnotizen.</string>
+	<string>WarteListe Pro benötigt Zugriff auf Ihre Fotobibliothek, um Excel-Dateien und Dokumente zu importieren.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>
