@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../l10n/strings.dart';
 import '../../models/patient.dart';
+import '../../models/therapeut.dart';
 import '../../providers/patienten_provider.dart';
 import '../../utils/constants.dart';
 import '../../utils/theme.dart';
@@ -38,16 +39,21 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
   late final TextEditingController _weitereInfosController;
   late final TextEditingController _sonstigeStoerungController;
   late final TextEditingController _verordnungsMengeController;
+  late final TextEditingController _kkSonstigesController;
 
   // State
   late String _versicherung;
   late String? _stoerungsbild;
   late String _terminWunsch;
+  late DateTime _anmeldung;
   DateTime? _geburtsdatum;
   DateTime? _rezeptDatum;
   DateTime? _rezeptGueltigBis;
   late PatientPrioritaet _prioritaet;
   bool _showSonstigeStoerung = false;
+  bool _hausbesuch = false;
+  String? _therapeutId;
+  List<Therapeut> _therapeuten = [];
 
   bool get _isEditing => widget.patient != null;
 
@@ -67,13 +73,21 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
     _verordnungsMengeController = TextEditingController(
       text: p?.verordnungsMenge?.toString() ?? '',
     );
+    _kkSonstigesController =
+        TextEditingController(text: p?.kkSonstiges ?? '');
 
     _versicherung = p?.versicherung ?? AppConstants.versicherungKK;
     _terminWunsch = p?.terminWunsch ?? AppConstants.terminFlexibel;
+    _anmeldung = p?.anmeldung ?? DateTime.now();
     _geburtsdatum = p?.geburtsdatum;
     _rezeptDatum = p?.rezeptDatum;
     _rezeptGueltigBis = p?.rezeptGueltigBis;
     _prioritaet = p?.prioritaet ?? PatientPrioritaet.normal;
+    _hausbesuch = p?.hausbesuch ?? false;
+    _therapeutId = p?.therapeutId;
+
+    // Therapeuten laden (async)
+    _loadTherapeuten();
 
     // Stoerungsbild: wenn vorhandener Wert nicht in der Liste ist,
     // als "Sonstige" behandeln.
@@ -108,7 +122,116 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
     _weitereInfosController.dispose();
     _sonstigeStoerungController.dispose();
     _verordnungsMengeController.dispose();
+    _kkSonstigesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadTherapeuten() async {
+    final praxisId = ref.read(praxisIdProvider);
+    if (praxisId == null) return;
+    final service = ref.read(firebaseServiceProvider);
+    service.getTherapeuten(praxisId).first.then((list) {
+      if (mounted) setState(() => _therapeuten = list);
+    }).catchError((_) {});
+  }
+
+  Future<void> _pickAnmeldedatum() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _anmeldung,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+      helpText: 'Anmeldedatum wählen',
+    );
+    if (picked != null) {
+      setState(() => _anmeldung = picked);
+    }
+  }
+
+  /// Prueft auf moegliche Duplikate (gleicher Name + Vorname + Geburtsdatum).
+  /// Gibt true zurueck wenn der User trotz Duplikat speichern moechte.
+  Future<bool> _confirmDuplicateIfNeeded() async {
+    if (_isEditing) return true; // beim Bearbeiten kein Check
+
+    final praxisId = ref.read(praxisIdProvider);
+    if (praxisId == null) return true;
+    final all = ref.read(patientenProvider).value ?? const [];
+
+    final vor = _vornameController.text.trim().toLowerCase();
+    final nam = _nameController.text.trim().toLowerCase();
+    if (vor.isEmpty || nam.isEmpty) return true;
+
+    final matches = all.where((p) {
+      if (p.vorname.toLowerCase() != vor) return false;
+      if (p.name.toLowerCase() != nam) return false;
+      if (_geburtsdatum != null && p.geburtsdatum != null) {
+        return p.geburtsdatum!.year == _geburtsdatum!.year &&
+            p.geburtsdatum!.month == _geburtsdatum!.month &&
+            p.geburtsdatum!.day == _geburtsdatum!.day;
+      }
+      return true; // bei fehlendem Geburtsdatum nur Namensvergleich
+    }).toList();
+
+    if (matches.isEmpty) return true;
+
+    if (!mounted) return true;
+    final fmt = DateFormat('dd.MM.yyyy');
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded,
+            color: AppTheme.warningColor, size: 36),
+        title: const Text('Mögliches Duplikat'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Es existiert bereits ein Patient mit demselben Namen:',
+            ),
+            const SizedBox(height: 12),
+            ...matches.take(3).map((p) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.person_outline, size: 16),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          '${p.vollstaendigerName}'
+                          '${p.geburtsdatum != null ? " (${fmt.format(p.geburtsdatum!)})" : ""} '
+                          '— ${p.status.label}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+            const SizedBox(height: 12),
+            const Text(
+              'Trotzdem als neuen Patient speichern?',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.warningColor),
+            child: const Text('Trotzdem speichern'),
+          ),
+        ],
+      ),
+    );
+    return result == true;
   }
 
   String get _resolvedStoerungsbild {
@@ -135,6 +258,10 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Duplicate-Check (nur bei neuem Patient)
+    final ok = await _confirmDuplicateIfNeeded();
+    if (!ok) return;
+
     setState(() => _isLoading = true);
 
     try {
@@ -145,17 +272,23 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
         throw Exception('Keine Praxis-ID gefunden. Bitte erneut anmelden.');
       }
 
-      final now = DateTime.now();
       final monatStr =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}';
+          '${_anmeldung.year}-${_anmeldung.month.toString().padLeft(2, '0')}';
 
       final verordnungsMenge = int.tryParse(
         _verordnungsMengeController.text.trim(),
       );
 
+      // Wenn Versicherung != Sonstiges, kkSonstiges leeren
+      final kkSonstiges = _versicherung == AppConstants.versicherungSonstiges
+          ? _kkSonstigesController.text.trim()
+          : '';
+
       if (_isEditing) {
         // Bestehenden Patienten aktualisieren
         final updated = widget.patient!.copyWith(
+          anmeldung: _anmeldung,
+          monat: monatStr,
           vorname: _vornameController.text.trim(),
           name: _nameController.text.trim(),
           telefon: _telefonController.text.trim(),
@@ -178,13 +311,18 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
           clearVerordnungsMenge: verordnungsMenge == null &&
               widget.patient!.verordnungsMenge != null,
           prioritaet: _prioritaet,
+          hausbesuch: _hausbesuch,
+          kkSonstiges: kkSonstiges,
+          therapeutId: _therapeutId,
+          clearTherapeutId: _therapeutId == null &&
+              widget.patient!.therapeutId != null,
         );
         await service.updatePatient(updated);
       } else {
         // Neuen Patienten erstellen
         final newPatient = Patient(
           id: '',
-          anmeldung: now,
+          anmeldung: _anmeldung,
           name: _nameController.text.trim(),
           vorname: _vornameController.text.trim(),
           telefon: _telefonController.text.trim(),
@@ -201,6 +339,9 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
           rezeptGueltigBis: _rezeptGueltigBis,
           verordnungsMenge: verordnungsMenge,
           prioritaet: _prioritaet,
+          hausbesuch: _hausbesuch,
+          kkSonstiges: kkSonstiges,
+          therapeutId: _therapeutId,
         );
         await service.addPatient(newPatient);
       }
@@ -245,6 +386,29 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // ── Anmeldedatum ──
+            _SectionHeader(
+                title: isDe ? 'Anmeldedatum' : 'Registration date'),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: _pickAnmeldedatum,
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: isDe ? 'Anmeldedatum' : 'Registration date',
+                  prefixIcon: const Icon(Icons.event_note_outlined),
+                  suffixIcon: const Icon(Icons.calendar_today_outlined),
+                  helperText: isDe
+                      ? 'Standard: heute. Bei Übertragung der Papierliste anpassbar.'
+                      : 'Default: today. Editable when transferring paper list.',
+                ),
+                child: Text(
+                  dateFormat.format(_anmeldung),
+                  style: theme.textTheme.bodyLarge,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // ── Persoenliche Daten ──
             _SectionHeader(
                 title: isDe ? 'Persönliche Daten' : 'Personal data'),
@@ -408,12 +572,17 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                 ButtonSegment(
                   value: 'KK',
                   label: Text(isDe ? 'Krankenkasse' : 'Public'),
-                  icon: const Icon(Icons.account_balance_outlined),
+                  icon: const Icon(Icons.account_balance_outlined, size: 16),
                 ),
                 ButtonSegment(
                   value: 'Privat',
                   label: Text(isDe ? 'Privat' : 'Private'),
-                  icon: const Icon(Icons.shield_outlined),
+                  icon: const Icon(Icons.shield_outlined, size: 16),
+                ),
+                ButtonSegment(
+                  value: AppConstants.versicherungSonstiges,
+                  label: Text(isDe ? 'Sonstiges' : 'Other'),
+                  icon: const Icon(Icons.more_horiz, size: 16),
                 ),
               ],
               selected: {_versicherung},
@@ -421,6 +590,27 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                 setState(() => _versicherung = selection.first);
               },
             ),
+            if (_versicherung == AppConstants.versicherungSonstiges) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _kkSonstigesController,
+                decoration: InputDecoration(
+                  labelText: isDe ? 'Bezeichnung' : 'Description',
+                  hintText: 'BG, PBeaKK, ...',
+                  prefixIcon: const Icon(Icons.edit_outlined),
+                ),
+                textInputAction: TextInputAction.next,
+                validator: (v) {
+                  if (_versicherung == AppConstants.versicherungSonstiges &&
+                      (v == null || v.trim().isEmpty)) {
+                    return isDe
+                        ? 'Bitte Bezeichnung eingeben'
+                        : 'Please enter description';
+                  }
+                  return null;
+                },
+              ),
+            ],
             const SizedBox(height: 12),
 
             // Arzt
@@ -456,6 +646,78 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                 );
               }).toList(),
             ),
+            const SizedBox(height: 16),
+
+            // Hausbesuch
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: AppTheme.slate300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: SwitchListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                value: _hausbesuch,
+                activeColor: AppTheme.primaryColor,
+                onChanged: (v) => setState(() => _hausbesuch = v),
+                title: Row(
+                  children: [
+                    const Icon(Icons.home_outlined,
+                        size: 20, color: AppTheme.slate700),
+                    const SizedBox(width: 8),
+                    Text(isDe ? 'Hausbesuch' : 'Home visit',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        )),
+                  ],
+                ),
+                subtitle: Text(
+                  isDe
+                      ? 'Behandlung beim Patienten zu Hause'
+                      : 'Treatment at the patient\'s home',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // ── Therapeut ──
+            _SectionHeader(title: isDe ? 'Therapeut' : 'Therapist'),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String?>(
+              value: _therapeutId,
+              decoration: InputDecoration(
+                labelText: isDe
+                    ? 'Therapeut zuweisen (optional)'
+                    : 'Assign therapist (optional)',
+                prefixIcon: const Icon(Icons.psychology_outlined),
+              ),
+              items: [
+                DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text(isDe ? '— Nicht zugewiesen —' : '— Unassigned —'),
+                ),
+                ..._therapeuten.map((t) => DropdownMenuItem<String?>(
+                      value: t.id,
+                      child: Text(t.name),
+                    )),
+              ],
+              onChanged: (v) => setState(() => _therapeutId = v),
+            ),
+            if (_therapeuten.isEmpty) ...[
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  isDe
+                      ? 'Keine Therapeuten angelegt — bitte unter Einstellungen → Therapeuten hinzufügen.'
+                      : 'No therapists set up — please add them in Settings → Therapists.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppTheme.slate500,
+                      ),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
 
             // ── Rezept / Verordnung ──

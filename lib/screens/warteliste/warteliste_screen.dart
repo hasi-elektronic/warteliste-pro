@@ -221,19 +221,87 @@ class _WartelisteScreenState extends ConsumerState<WartelisteScreen>
         // ── Filter-Chips ──
         _FilterChipsRow(),
 
-        // ── Tabs ──
+        // ── Status-Tabs (gross & farbig) ──
         Container(
-          color: AppTheme.primaryColor,
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            tabs: [
-              Tab(text: s.wartelisteAlle),
-              Tab(text: s.statusWartend),
-              Tab(text: s.statusPlatzGefunden),
-              Tab(text: s.statusInBehandlung),
-            ],
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              bottom: BorderSide(color: AppTheme.slate300, width: 1),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: SizedBox(
+            height: 38,
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              dividerColor: Colors.transparent,
+              indicator: BoxDecoration(
+                color: AppTheme.primaryColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorPadding: const EdgeInsets.symmetric(horizontal: 2),
+              labelColor: Colors.white,
+              unselectedLabelColor: AppTheme.slate700,
+              labelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.1,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+              labelPadding: const EdgeInsets.symmetric(horizontal: 14),
+              tabs: [
+                Tab(
+                  height: 36,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.list_alt_outlined, size: 16),
+                      const SizedBox(width: 6),
+                      Text(s.wartelisteAlle),
+                    ],
+                  ),
+                ),
+                Tab(
+                  height: 36,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.hourglass_top, size: 16),
+                      const SizedBox(width: 6),
+                      Text(s.statusWartend),
+                    ],
+                  ),
+                ),
+                Tab(
+                  height: 36,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check_circle_outline, size: 16),
+                      const SizedBox(width: 6),
+                      Text(s.statusPlatzGefunden),
+                    ],
+                  ),
+                ),
+                Tab(
+                  height: 36,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.medical_services_outlined, size: 16),
+                      const SizedBox(width: 6),
+                      Text(s.statusInBehandlung),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
 
@@ -302,16 +370,52 @@ class _FilterChipsRow extends ConsumerWidget {
     final stoerungsbildFilter = ref.watch(stoerungsbildFilterProvider);
     final versicherungFilter = ref.watch(versicherungFilterProvider);
     final monatFilter = ref.watch(monatFilterProvider);
+    final nurHausbesuch = ref.watch(nurHausbesuchProvider);
+    final therapeutFilter = ref.watch(therapeutFilterProvider);
+    final therapeuten = ref.watch(therapeutenProvider).valueOrNull ?? const [];
 
     final hasActiveFilter = stoerungsbildFilter != null ||
         versicherungFilter != null ||
-        monatFilter != null;
+        monatFilter != null ||
+        nurHausbesuch ||
+        therapeutFilter != null;
+
+    String? therapeutLabel;
+    if (therapeutFilter != null) {
+      try {
+        therapeutLabel =
+            therapeuten.firstWhere((t) => t.id == therapeutFilter).name;
+      } catch (_) {
+        therapeutLabel = 'Therapeut';
+      }
+    }
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
+          // Hausbesuch-Toggle
+          _buildFilterChip(
+            context: context,
+            label: 'Hausbesuch',
+            icon: Icons.home_outlined,
+            isActive: nurHausbesuch,
+            onTap: () =>
+                ref.read(nurHausbesuchProvider.notifier).state = !nurHausbesuch,
+          ),
+          const SizedBox(width: 8),
+
+          // Therapeut-Filter
+          _buildFilterChip(
+            context: context,
+            label: therapeutLabel ?? 'Therapeut',
+            icon: Icons.psychology_outlined,
+            isActive: therapeutFilter != null,
+            onTap: () => _showTherapeutPicker(context, ref, therapeuten),
+          ),
+          const SizedBox(width: 8),
+
           // Stoerungsbild-Filter
           _buildFilterChip(
             context: context,
@@ -350,10 +454,64 @@ class _FilterChipsRow extends ConsumerWidget {
                 ref.read(stoerungsbildFilterProvider.notifier).state = null;
                 ref.read(versicherungFilterProvider.notifier).state = null;
                 ref.read(monatFilterProvider.notifier).state = null;
+                ref.read(nurHausbesuchProvider.notifier).state = false;
+                ref.read(therapeutFilterProvider.notifier).state = null;
               },
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  void _showTherapeutPicker(
+      BuildContext context, WidgetRef ref, List therapeuten) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Text(
+                    'Therapeut waehlen',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const Spacer(),
+                  if (ref.read(therapeutFilterProvider) != null)
+                    TextButton(
+                      onPressed: () {
+                        ref.read(therapeutFilterProvider.notifier).state = null;
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Zuruecksetzen'),
+                    ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            if (therapeuten.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(20),
+                child: Text('Keine Therapeuten angelegt.'),
+              ),
+            ...therapeuten.map((t) => ListTile(
+                  leading: const Icon(Icons.psychology_outlined),
+                  title: Text(t.name),
+                  selected:
+                      ref.read(therapeutFilterProvider) == t.id,
+                  onTap: () {
+                    ref.read(therapeutFilterProvider.notifier).state = t.id;
+                    Navigator.pop(context);
+                  },
+                )),
+          ],
+        ),
       ),
     );
   }
@@ -363,20 +521,32 @@ class _FilterChipsRow extends ConsumerWidget {
     required String label,
     required bool isActive,
     required VoidCallback onTap,
+    IconData? icon,
   }) {
     return FilterChip(
       label: Text(label),
+      avatar: icon != null
+          ? Icon(
+              icon,
+              size: 14,
+              color: isActive ? AppTheme.primaryColor : AppTheme.slate600,
+            )
+          : null,
       selected: isActive,
       onSelected: (_) => onTap(),
       labelStyle: TextStyle(
-        color: isActive ? AppTheme.primaryColor : AppTheme.primaryColor,
-        fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+        color: isActive ? AppTheme.primaryColor : AppTheme.slate700,
+        fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
       ),
-      backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.08),
-      selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+      backgroundColor: Colors.white,
+      selectedColor: AppTheme.primaryColor.withValues(alpha: 0.12),
       checkmarkColor: AppTheme.primaryColor,
+      showCheckmark: false,
       side: BorderSide(
-        color: AppTheme.primaryColor.withValues(alpha: 0.3),
+        color: isActive
+            ? AppTheme.primaryColor.withValues(alpha: 0.6)
+            : AppTheme.slate300,
+        width: 1,
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/patient.dart';
 import '../models/patient_note.dart';
+import '../models/therapeut.dart';
 import '../services/firebase_service.dart';
 
 /// Provider fuer den FirebaseService (Singleton).
@@ -50,6 +51,22 @@ final prioritaetFilterProvider =
 /// Nur Rezept-Warnungen anzeigen.
 final nurRezeptWarnungProvider = StateProvider<bool>((ref) => false);
 
+/// Nur Patienten mit Hausbesuch anzeigen.
+final nurHausbesuchProvider = StateProvider<bool>((ref) => false);
+
+/// Therapeut-Filter (null = alle).
+final therapeutFilterProvider = StateProvider<String?>((ref) => null);
+
+/// Echtzeit-Stream der Therapeuten der aktuellen Praxis.
+final therapeutenProvider = StreamProvider<List<Therapeut>>((ref) {
+  final praxisId = ref.watch(praxisIdProvider);
+  if (praxisId == null || praxisId.isEmpty) {
+    return Stream.value(const []);
+  }
+  final service = ref.watch(firebaseServiceProvider);
+  return service.getTherapeuten(praxisId);
+});
+
 /// Aktiver Bottom-Navigation-Tab (0=Dashboard, 1=Warteliste, 2=Statistik, 3=Einstellungen).
 final dashboardNavIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -83,6 +100,8 @@ final gefiltertePatientenProvider = Provider<AsyncValue<List<Patient>>>((ref) {
   final monatFilter = ref.watch(monatFilterProvider);
   final prioritaetFilter = ref.watch(prioritaetFilterProvider);
   final nurRezeptWarnung = ref.watch(nurRezeptWarnungProvider);
+  final nurHausbesuch = ref.watch(nurHausbesuchProvider);
+  final therapeutFilter = ref.watch(therapeutFilterProvider);
   final sortOption = ref.watch(sortOptionProvider);
 
   return asyncPatienten.whenData((patienten) {
@@ -121,6 +140,16 @@ final gefiltertePatientenProvider = Provider<AsyncValue<List<Patient>>>((ref) {
       result = result
           .where((p) => p.prioritaet == prioritaetFilter)
           .toList();
+    }
+
+    // Filter: Hausbesuch
+    if (nurHausbesuch) {
+      result = result.where((p) => p.hausbesuch).toList();
+    }
+
+    // Filter: Therapeut
+    if (therapeutFilter != null) {
+      result = result.where((p) => p.therapeutId == therapeutFilter).toList();
     }
 
     // Filter: Nur Rezept-Warnungen

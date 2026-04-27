@@ -97,6 +97,14 @@ class Patient {
   // ── Prioritaet ──
   final PatientPrioritaet prioritaet;
 
+  // ── Hausbesuch ──
+  /// Ob der Patient einen Hausbesuch wuenscht/braucht.
+  final bool hausbesuch;
+
+  // ── Krankenkasse Sonstiges ──
+  /// Freitext fuer 'Sonstiges' (z.B. BG, PBeaKK) wenn versicherung == 'Sonstiges'.
+  final String kkSonstiges;
+
   const Patient({
     required this.id,
     required this.anmeldung,
@@ -120,6 +128,8 @@ class Patient {
     this.verordnungsMenge,
     this.letzterKontakt,
     this.prioritaet = PatientPrioritaet.normal,
+    this.hausbesuch = false,
+    this.kkSonstiges = '',
   });
 
   /// Tage bis Rezept ablaeuft (negativ = bereits abgelaufen).
@@ -203,6 +213,8 @@ class Patient {
           : null,
       prioritaet: PatientPrioritaet.fromString(
           data['prioritaet'] as String? ?? 'normal'),
+      hausbesuch: data['hausbesuch'] as bool? ?? false,
+      kkSonstiges: data['kkSonstiges'] as String? ?? '',
     );
   }
 
@@ -235,6 +247,8 @@ class Patient {
       'letzterKontakt':
           letzterKontakt != null ? Timestamp.fromDate(letzterKontakt!) : null,
       'prioritaet': prioritaet.name,
+      'hausbesuch': hausbesuch,
+      'kkSonstiges': kkSonstiges,
     };
   }
 
@@ -364,6 +378,8 @@ class Patient {
     DateTime? letzterKontakt,
     bool clearLetzterKontakt = false,
     PatientPrioritaet? prioritaet,
+    bool? hausbesuch,
+    String? kkSonstiges,
   }) {
     return Patient(
       id: id ?? this.id,
@@ -399,6 +415,8 @@ class Patient {
           ? null
           : (letzterKontakt ?? this.letzterKontakt),
       prioritaet: prioritaet ?? this.prioritaet,
+      hausbesuch: hausbesuch ?? this.hausbesuch,
+      kkSonstiges: kkSonstiges ?? this.kkSonstiges,
     );
   }
 

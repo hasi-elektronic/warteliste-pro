@@ -1,4 +1,4 @@
-# Release Notes — WarteListe Pro v1.5.1+23
+# Release Notes — WarteListe Pro v1.5.1+24
 
 ## Play Store (Deutsch, max 500 Zeichen)
 
@@ -49,7 +49,7 @@ Haben Sie Fragen oder Anregungen? Schreiben Sie uns an info@hasi-elektronik.de
 ## TestFlight (intern, kann technischer sein)
 
 ```
-v1.5.1+23 — iOS Compliance & Security Hardening
+v1.5.1+24 — iOS Compliance & Security Hardening
 
 Änderungen:
 - NSCameraUsageDescription + NSMicrophoneUsageDescription entfernt
@@ -70,7 +70,7 @@ Testing-Fokus:
 
 ## Checklist vor Submit
 
-- [ ] `pubspec.yaml` version = 1.5.1+23 ✓ bereits gesetzt
+- [ ] `pubspec.yaml` version = 1.5.1+24 ✓ bereits gesetzt
 - [ ] iOS: `ios/Runner/Info.plist` — Camera + Microphone Permissions entfernt ✓
 - [ ] Android: `targetSdkVersion` = 35 (Google Play 2026 Anforderung) — zu verifizieren
 - [ ] Datenschutz-URL erreichbar: https://warteliste-pro-legal.pages.dev/datenschutz.html — zu verifizieren

@@ -64,7 +64,7 @@ python3 scripts/upload_to_play.py build/app/outputs/bundle/release/app-release.a
 ```
 
 ## Aktuelle Version
-- pubspec.yaml: version **1.5.1+23**
+- pubspec.yaml: version **1.5.2+25**
 
 ## Version 1.5.1 Änderungen (seit 1.4.0)
 - iOS Compliance: NSCameraUsageDescription + NSMicrophoneUsageDescription entfernt (nicht verwendet, App-Review-Risiko)

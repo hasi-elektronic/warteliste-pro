@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/patient.dart';
+import '../models/therapeut.dart';
+import '../providers/patienten_provider.dart';
+import '../providers/standort_provider.dart';
 import '../utils/theme.dart';
 import 'status_badge.dart';
 
@@ -10,7 +14,7 @@ import 'status_badge.dart';
 ///
 /// Zeigt Name, Stoerungsbild, Anmeldedatum, Wartezeit, Status-Badge,
 /// Versicherungs-Badge und einen Telefon-Button.
-class PatientCard extends StatelessWidget {
+class PatientCard extends ConsumerWidget {
   final Patient patient;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -32,7 +36,7 @@ class PatientCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('dd.MM.yyyy');
 
@@ -45,8 +49,25 @@ class PatientCard extends StatelessWidget {
             ? AppTheme.warningColor
             : Colors.transparent;
 
-    return Card(
+    // Status-basiertes Dimming: Platz gefunden / Abgeschlossen treten zurueck
+    final isDimmed = patient.status == PatientStatus.platzGefunden ||
+        patient.status == PatientStatus.abgeschlossen;
+
+    // Therapeut-Name nachschlagen
+    String? therapeutName;
+    if (patient.therapeutId != null) {
+      final tList = ref.watch(therapeutenProvider).valueOrNull ?? const [];
+      try {
+        therapeutName =
+            tList.firstWhere((t) => t.id == patient.therapeutId).name;
+      } catch (_) {
+        therapeutName = null;
+      }
+    }
+
+    final card = Card(
       clipBehavior: Clip.antiAlias,
+      color: isDimmed ? AppTheme.slate100 : null,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -129,6 +150,7 @@ class PatientCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         _VersicherungBadge(
                           versicherung: patient.versicherung,
+                          sonstiges: patient.kkSonstiges,
                         ),
                       ],
                     ),
@@ -188,43 +210,109 @@ class PatientCard extends StatelessWidget {
                                 : AppTheme.warningColor,
                           ),
                         ],
+                        if (patient.hausbesuch) ...[
+                          const SizedBox(width: 6),
+                          Tooltip(
+                            message: 'Hausbesuch',
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.accentColor
+                                    .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: AppTheme.accentColor
+                                      .withValues(alpha: 0.4),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.home_outlined,
+                                      size: 12, color: AppTheme.accentColor),
+                                  SizedBox(width: 3),
+                                  Text(
+                                    'HB',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.accentColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 6),
 
-                    // Anmeldedatum + Wartezeit
-                    Row(
+                    // Anmeldedatum + Wartezeit + Therapeut
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Icon(
-                          Icons.calendar_today_outlined,
-                          size: 14,
-                          color: Colors.grey.shade500,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 14,
+                              color: AppTheme.slate500,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              dateFormat.format(patient.anmeldung),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: AppTheme.slate600,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          dateFormat.format(patient.anmeldung),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: Colors.grey.shade600,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isKritisch
+                                  ? Icons.error_outline
+                                  : isWarnung
+                                      ? Icons.warning_amber_rounded
+                                      : Icons.access_time,
+                              size: 14,
+                              color: _wartezeitColor(tage),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Seit $tage Tagen',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: _wartezeitColor(tage),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (therapeutName != null && therapeutName.isNotEmpty)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.psychology_outlined,
+                                size: 14,
+                                color: AppTheme.primaryColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                therapeutName,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: AppTheme.primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Icon(
-                          isKritisch
-                              ? Icons.error_outline
-                              : isWarnung
-                                  ? Icons.warning_amber_rounded
-                                  : Icons.access_time,
-                          size: 14,
-                          color: _wartezeitColor(tage),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Seit $tage Tagen',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: _wartezeitColor(tage),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                       ],
                     ),
                   ],
@@ -261,6 +349,9 @@ class PatientCard extends StatelessWidget {
         ),
       ),
     );
+
+    // Dimming fuer Platz gefunden / Abgeschlossen
+    return isDimmed ? Opacity(opacity: 0.65, child: card) : card;
   }
 
   String _initials(Patient p) {
@@ -279,14 +370,30 @@ class PatientCard extends StatelessWidget {
 /// Kleines Badge fuer die Versicherungsart.
 class _VersicherungBadge extends StatelessWidget {
   final String versicherung;
+  final String sonstiges;
 
-  const _VersicherungBadge({required this.versicherung});
+  const _VersicherungBadge({
+    required this.versicherung,
+    this.sonstiges = '',
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isPrivat = versicherung.toLowerCase() == 'privat';
-    final color = isPrivat ? Colors.purple : Colors.blue;
-    final label = isPrivat ? 'Privat' : 'KK';
+    final v = versicherung.toLowerCase();
+    final isPrivat = v == 'privat';
+    final isSonstiges = v == 'sonstiges';
+    final Color color;
+    final String label;
+    if (isPrivat) {
+      color = Colors.purple;
+      label = 'Privat';
+    } else if (isSonstiges) {
+      color = Colors.deepOrange;
+      label = sonstiges.isNotEmpty ? sonstiges : 'Sonstiges';
+    } else {
+      color = Colors.blue;
+      label = 'KK';
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -304,6 +411,8 @@ class _VersicherungBadge extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: color,
         ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
