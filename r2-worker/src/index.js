@@ -135,13 +135,18 @@ async function getUserPraxisIds(uid, idToken) {
 
 // --------- Path Validation ---------
 function extractPraxisId(key) {
-  // Expected: praxen/{praxisId}/patienten/{patientId}/{file}
+  // Expected formats:
+  //   praxen/{praxisId}/patienten/{patientId}/{file}
+  //   praxen/{praxisId}/berichte/{berichtId}/{file}
   if (!key || key.includes('..') || key.startsWith('/')) return null;
   const parts = key.split('/');
-  if (parts.length < 5) return null;
-  if (parts[0] !== 'praxen' || parts[2] !== 'patienten') return null;
+  if (parts.length < 4) return null;
+  if (parts[0] !== 'praxen') return null;
   const praxisId = parts[1];
   if (!praxisId || !/^[a-zA-Z0-9_-]+$/.test(praxisId)) return null;
+  // Allow known subfolders only
+  const sub = parts[2];
+  if (sub !== 'patienten' && sub !== 'berichte') return null;
   return praxisId;
 }
 

@@ -1,7 +1,7 @@
 name: warteliste_pro
 description: "WarteListe Pro - Wartelisten-Management für Logopädie-Praxen"
 publish_to: 'none'
-version: 1.5.3+27
+version: 1.5.4+28
 
 environment:
   sdk: ^3.7.2
@@ -34,6 +34,7 @@ dependencies:
   package_info_plus: ^8.1.1
   pdf: ^3.11.0
   printing: ^5.13.0
+  flutter_quill: ^10.8.5
 
 dev_dependencies:
   flutter_test:

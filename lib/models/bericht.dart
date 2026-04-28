@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'bericht_anhang.dart';
+
 /// Kategorie eines Berichts.
 enum BerichtKategorie {
   verlaufsbericht,
@@ -136,7 +138,16 @@ class Bericht {
 
   final BerichtKategorie kategorie;
   final String titel;
+
+  /// Inhalt als Quill-Delta-JSON (rich text mit Headings, Listen,
+  /// Checkboxen). Bei alten Berichten aus 1.5.3 ist es Plain-Text.
   final String inhalt;
+
+  /// Plain-Text-Version (fuer Suche & Vorschau, ohne Formatierung).
+  final String inhaltText;
+
+  /// Datei-Anhaenge (PDFs, Bilder).
+  final List<BerichtAnhang> anhaenge;
 
   const Bericht({
     required this.id,
@@ -151,6 +162,8 @@ class Bericht {
     required this.kategorie,
     required this.titel,
     required this.inhalt,
+    this.inhaltText = '',
+    this.anhaenge = const [],
   });
 
   factory Bericht.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -168,6 +181,10 @@ class Bericht {
       kategorie: BerichtKategorie.fromString(d['kategorie'] as String? ?? 'allgemein'),
       titel: d['titel'] as String? ?? '',
       inhalt: d['inhalt'] as String? ?? '',
+      inhaltText: d['inhaltText'] as String? ?? (d['inhalt'] as String? ?? ''),
+      anhaenge: (d['anhaenge'] as List<dynamic>? ?? [])
+          .map((m) => BerichtAnhang.fromMap(Map<String, dynamic>.from(m as Map)))
+          .toList(),
     );
   }
 
@@ -185,6 +202,8 @@ class Bericht {
       'kategorie': kategorie.name,
       'titel': titel,
       'inhalt': inhalt,
+      'inhaltText': inhaltText,
+      'anhaenge': anhaenge.map((a) => a.toMap()).toList(),
     };
   }
 
@@ -192,10 +211,12 @@ class Bericht {
     String? id,
     String? titel,
     String? inhalt,
+    String? inhaltText,
     BerichtKategorie? kategorie,
     DateTime? aktualisiertAm,
     String? patientId,
     String? patientName,
+    List<BerichtAnhang>? anhaenge,
   }) {
     return Bericht(
       id: id ?? this.id,
@@ -210,6 +231,8 @@ class Bericht {
       kategorie: kategorie ?? this.kategorie,
       titel: titel ?? this.titel,
       inhalt: inhalt ?? this.inhalt,
+      inhaltText: inhaltText ?? this.inhaltText,
+      anhaenge: anhaenge ?? this.anhaenge,
     );
   }
 }

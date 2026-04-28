@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../models/bericht.dart';
+import '../../models/bericht_anhang.dart';
 import '../../providers/patienten_provider.dart';
 import '../../providers/standort_provider.dart';
 import '../../services/bericht_pdf_service.dart';
 import '../../utils/theme.dart';
 import '../../widgets/app_header.dart';
+import '../../widgets/bericht_rich_editor.dart';
 import 'bericht_form_screen.dart';
 
 /// Liste aller Berichte einer Praxis mit Filter, Suche und Schnellzugriff
@@ -111,7 +115,7 @@ class _BerichteListeScreenState extends ConsumerState<BerichteListeScreen> {
                   }
                   if (_query.isEmpty) return true;
                   return b.titel.toLowerCase().contains(_query) ||
-                      b.inhalt.toLowerCase().contains(_query) ||
+                      b.inhaltText.toLowerCase().contains(_query) ||
                       (b.patientName?.toLowerCase().contains(_query) ?? false) ||
                       b.authorEmail.toLowerCase().contains(_query);
                 }).toList();
@@ -193,9 +197,12 @@ class _BerichtCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final fmt = DateFormat('dd.MM.yyyy · HH:mm');
     final color = _colorFor(bericht.kategorie);
-    final preview = bericht.inhalt.length > 140
-        ? '${bericht.inhalt.substring(0, 140)}…'
+    final previewSrc = bericht.inhaltText.isNotEmpty
+        ? bericht.inhaltText
         : bericht.inhalt;
+    final preview = previewSrc.length > 140
+        ? '${previewSrc.substring(0, 140)}…'
+        : previewSrc;
     return Card(
       child: InkWell(
         onTap: () => _openDetail(context),
@@ -434,17 +441,38 @@ class _BerichtDetailSheet extends ConsumerWidget {
               ],
             ),
             const Divider(height: 24),
-            // Inhalt
+            // Inhalt (Rich Text)
             Expanded(
               child: SingleChildScrollView(
                 controller: scrollCtrl,
-                child: SelectableText(
-                  bericht.inhalt,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.6,
-                    color: AppTheme.slate800,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BerichtRichViewer(inhalt: bericht.inhalt),
+                    if (bericht.anhaenge.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.attach_file,
+                              size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Anhänge (${bericht.anhaenge.length})',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ...bericht.anhaenge.map(
+                          (a) => _AnhangViewTile(anhang: a)),
+                    ],
+                  ],
                 ),
               ),
             ),
@@ -645,6 +673,90 @@ class _ErrorBox extends StatelessWidget {
           'Fehler beim Laden: $error',
           style: const TextStyle(color: AppTheme.errorColor),
           textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+}
+
+class _AnhangViewTile extends StatelessWidget {
+  final BerichtAnhang anhang;
+  const _AnhangViewTile({required this.anhang});
+
+  IconData get _icon {
+    if (anhang.istPdf) return Icons.picture_as_pdf;
+    if (anhang.istBild) return Icons.image_outlined;
+    return Icons.insert_drive_file_outlined;
+  }
+
+  Color get _color {
+    if (anhang.istPdf) return AppTheme.errorColor;
+    if (anhang.istBild) return AppTheme.accentColor;
+    return AppTheme.slate600;
+  }
+
+  Future<void> _open() async {
+    final uri = Uri.parse(anhang.url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: _open,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: AppTheme.slate300),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 32, height: 32,
+                  decoration: BoxDecoration(
+                    color: _color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(_icon, size: 18, color: _color),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        anhang.name,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        anhang.dateigroesseLesbar,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.slate500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.open_in_new,
+                    size: 16, color: AppTheme.slate500),
+              ],
+            ),
+          ),
         ),
       ),
     );

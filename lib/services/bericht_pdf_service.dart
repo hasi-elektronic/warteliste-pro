@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:intl/intl.dart';
@@ -95,15 +96,44 @@ class BerichtPdfService {
           ),
           pw.SizedBox(height: 12),
 
-          // Inhalt
-          pw.Text(
-            bericht.inhalt,
-            style: const pw.TextStyle(
-              fontSize: 11,
-              color: PdfColors.grey900,
-              lineSpacing: 4,
+          // Inhalt — Quill Delta -> PDF widgets
+          ..._renderQuillContent(bericht.inhalt, bericht.inhaltText),
+
+          // Anhänge
+          if (bericht.anhaenge.isNotEmpty) ...[
+            pw.SizedBox(height: 16),
+            pw.Container(
+              padding: const pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.grey100,
+                borderRadius: pw.BorderRadius.circular(4),
+                border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'ANHÄNGE',
+                    style: pw.TextStyle(
+                      fontSize: 9,
+                      color: PdfColors.grey700,
+                      letterSpacing: 1.0,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.SizedBox(height: 6),
+                  ...bericht.anhaenge.map((a) => pw.Padding(
+                        padding: const pw.EdgeInsets.symmetric(vertical: 2),
+                        child: pw.Text(
+                          '• ${a.name}  (${a.dateigroesseLesbar})',
+                          style: const pw.TextStyle(
+                              fontSize: 10, color: PdfColors.grey800),
+                        ),
+                      )),
+                ],
+              ),
             ),
-          ),
+          ],
 
           // Unterschrift-Bereich (manuell)
           pw.SizedBox(height: 36),
@@ -306,6 +336,159 @@ class BerichtPdfService {
     );
   }
 
+  /// Konvertiert Quill-Delta-JSON in eine Liste von PDF-Widgets.
+  /// Faellt auf Plaintext zurueck wenn der Inhalt kein gueltiges Delta ist.
+  static List<pw.Widget> _renderQuillContent(String inhalt, String fallback) {
+    List<dynamic>? ops;
+    try {
+      final decoded = jsonDecode(inhalt);
+      if (decoded is List) ops = decoded;
+    } catch (_) {/* Plaintext */}
+
+    if (ops == null) {
+      // Plain text fallback
+      return [
+        pw.Text(
+          (fallback.isNotEmpty ? fallback : inhalt),
+          style: const pw.TextStyle(
+            fontSize: 11,
+            color: PdfColors.grey900,
+            lineSpacing: 4,
+          ),
+        ),
+      ];
+    }
+
+    // Delta in Bloecke gruppieren: jeder Newline + Attributes erzeugt einen Block
+    final widgets = <pw.Widget>[];
+    final buffer = StringBuffer();
+    final inlineRuns = <_InlineRun>[];
+
+    void flushParagraph(Map<String, dynamic>? blockAttrs) {
+      final hasContent = inlineRuns.isNotEmpty ||
+          (blockAttrs != null && (blockAttrs['list'] != null));
+      if (!hasContent && inlineRuns.isEmpty) return;
+
+      // List-Praefix
+      String prefix = '';
+      double indent = 0;
+      pw.TextStyle baseStyle = const pw.TextStyle(
+        fontSize: 11,
+        color: PdfColors.grey900,
+        lineSpacing: 3,
+      );
+
+      if (blockAttrs != null) {
+        final h = blockAttrs['header'];
+        if (h is num) {
+          double size = 11;
+          if (h == 1) size = 18;
+          else if (h == 2) size = 15;
+          else if (h == 3) size = 13;
+          baseStyle = pw.TextStyle(
+            fontSize: size,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.grey900,
+          );
+        }
+        final list = blockAttrs['list'];
+        if (list == 'bullet') {
+          prefix = '•  ';
+          indent = 6;
+        } else if (list == 'ordered') {
+          prefix = '1.  '; // simplification
+          indent = 6;
+        } else if (list == 'checked') {
+          prefix = '☑  ';
+          indent = 6;
+        } else if (list == 'unchecked') {
+          prefix = '☐  ';
+          indent = 6;
+        }
+        if (blockAttrs['blockquote'] == true) {
+          // Blockquote will be styled below
+        }
+      }
+
+      final spans = <pw.TextSpan>[];
+      if (prefix.isNotEmpty) {
+        spans.add(pw.TextSpan(text: prefix, style: baseStyle));
+      }
+      for (final run in inlineRuns) {
+        final s = baseStyle.copyWith(
+          fontWeight: run.bold ? pw.FontWeight.bold : null,
+          fontStyle: run.italic ? pw.FontStyle.italic : null,
+          decoration: run.underline ? pw.TextDecoration.underline : null,
+          color: run.code ? PdfColors.deepOrange : baseStyle.color,
+        );
+        spans.add(pw.TextSpan(text: run.text, style: s));
+      }
+
+      pw.Widget block = pw.Padding(
+        padding: pw.EdgeInsets.only(left: indent, top: 2, bottom: 2),
+        child: pw.RichText(
+          text: pw.TextSpan(children: spans),
+        ),
+      );
+      if (blockAttrs?['blockquote'] == true) {
+        block = pw.Container(
+          margin: const pw.EdgeInsets.symmetric(vertical: 4),
+          padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: const pw.BoxDecoration(
+            border: pw.Border(
+              left: pw.BorderSide(color: PdfColors.grey400, width: 2),
+            ),
+          ),
+          child: block,
+        );
+      }
+      widgets.add(block);
+      inlineRuns.clear();
+      buffer.clear();
+    }
+
+    for (final op in ops) {
+      if (op is! Map) continue;
+      final insert = op['insert'];
+      final attrs = (op['attributes'] as Map?)?.cast<String, dynamic>() ?? {};
+
+      if (insert is String) {
+        // Split by newlines: each \n optionally has block attributes for the *paragraph* it ends
+        final parts = insert.split('\n');
+        for (var i = 0; i < parts.length; i++) {
+          final segment = parts[i];
+          final isLast = i == parts.length - 1;
+          if (segment.isNotEmpty) {
+            inlineRuns.add(_InlineRun(
+              text: segment,
+              bold: attrs['bold'] == true,
+              italic: attrs['italic'] == true,
+              underline: attrs['underline'] == true,
+              code: attrs['code'] == true,
+            ));
+          }
+          if (!isLast) {
+            // The block attributes for this paragraph's end usually come from the NEXT op
+            // (Quill convention). But to keep things simple for our use, treat blockAttrs as
+            // current attrs only when the insert itself is just \n.
+            flushParagraph(insert == '\n' ? attrs : null);
+          }
+        }
+      }
+    }
+    // Final flush
+    if (inlineRuns.isNotEmpty) flushParagraph(null);
+
+    return widgets.isEmpty
+        ? [
+            pw.Text(
+              fallback.isNotEmpty ? fallback : '(leer)',
+              style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey800),
+            )
+          ]
+        : widgets;
+  }
+
   static PdfColor _pdfColorFor(BerichtKategorie k) {
     switch (k) {
       case BerichtKategorie.verlaufsbericht:
@@ -371,6 +554,21 @@ class BerichtPdfService {
     ].join(' - ');
     return '$base.pdf';
   }
+}
+
+class _InlineRun {
+  final String text;
+  final bool bold;
+  final bool italic;
+  final bool underline;
+  final bool code;
+  const _InlineRun({
+    required this.text,
+    this.bold = false,
+    this.italic = false,
+    this.underline = false,
+    this.code = false,
+  });
 }
 
 extension on PdfColor {

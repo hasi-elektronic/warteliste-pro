@@ -1,14 +1,24 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../models/bericht.dart';
+import '../../models/bericht_anhang.dart';
 import '../../models/patient.dart';
 import '../../providers/patienten_provider.dart';
 import '../../providers/standort_provider.dart';
 import '../../services/bericht_pdf_service.dart';
+import '../../services/bericht_upload_service.dart';
 import '../../utils/theme.dart';
 import '../../widgets/app_header.dart';
+import '../../widgets/bericht_rich_editor.dart';
 
 /// Argumente fuer das Bericht-Formular.
 class BerichtFormArgs {
@@ -35,10 +45,17 @@ class BerichtFormScreen extends ConsumerStatefulWidget {
 class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titelCtrl;
-  late final TextEditingController _inhaltCtrl;
+  Key _editorReloadKey = UniqueKey();
+  String _initialInhalt = '';
+  String _aktuelleDeltaJson = '';
+  String _aktuellerPlaintext = '';
+
   late BerichtKategorie _kategorie;
-  Patient? _patient; // optional patient
+  Patient? _patient;
+  late List<BerichtAnhang> _anhaenge;
   bool _saving = false;
+  bool _uploadingAnhang = false;
+  late final String _berichtId;
 
   bool get _isEditing => widget.args.bericht != null;
 
@@ -47,28 +64,25 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
     super.initState();
     final b = widget.args.bericht;
     _titelCtrl = TextEditingController(text: b?.titel ?? '');
+
     final defaultKategorie = widget.args.kategorie ??
         (widget.args.patient != null
             ? BerichtKategorie.verlaufsbericht
             : BerichtKategorie.allgemein);
-    _inhaltCtrl = TextEditingController(
-      text: b?.inhalt ?? defaultKategorie.vorlage,
-    );
-    _kategorie = b?.kategorie ??
-        widget.args.kategorie ??
-        (widget.args.patient != null
-            ? BerichtKategorie.verlaufsbericht
-            : BerichtKategorie.allgemein);
+
+    _kategorie = b?.kategorie ?? defaultKategorie;
     _patient = widget.args.patient;
-    if (b?.patientId != null) {
-      // Bericht editiert mit Patient — wird ueber Provider nachgeladen
-    }
+    _anhaenge = b?.anhaenge.toList() ?? [];
+    _berichtId = (b?.id.isNotEmpty ?? false) ? b!.id : const Uuid().v4();
+
+    _initialInhalt = b?.inhalt ?? defaultKategorie.vorlage;
+    _aktuelleDeltaJson = _initialInhalt;
+    _aktuellerPlaintext = b?.inhaltText ?? defaultKategorie.vorlage;
   }
 
   @override
   void dispose() {
     _titelCtrl.dispose();
-    _inhaltCtrl.dispose();
     super.dispose();
   }
 
@@ -76,11 +90,12 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
     if (widget.args.bericht == null) return;
     try {
       final praxis = ref.read(aktivesPraxisProvider);
-      // Aktuelle (evtl. ungespeicherte) Werte aus Form nehmen
       final aktuell = widget.args.bericht!.copyWith(
         titel: _titelCtrl.text.trim(),
-        inhalt: _inhaltCtrl.text.trim(),
+        inhalt: _aktuelleDeltaJson,
+        inhaltText: _aktuellerPlaintext,
         kategorie: _kategorie,
+        anhaenge: _anhaenge,
       );
       await BerichtPdfService.druckeBericht(
         bericht: aktuell,
@@ -103,18 +118,130 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
   void _applyVorlage(BerichtKategorie k) {
     setState(() {
       _kategorie = k;
-      // Inhalt nur ersetzen wenn er leer ist oder die alte Vorlage entspricht
-      final aktuell = _inhaltCtrl.text.trim();
+      final aktuell = _aktuellerPlaintext.trim();
       final alteVorlagen =
           BerichtKategorie.values.map((e) => e.vorlage.trim()).toSet();
       if (aktuell.isEmpty || alteVorlagen.contains(aktuell)) {
-        _inhaltCtrl.text = k.vorlage;
+        _initialInhalt = k.vorlage;
+        _aktuelleDeltaJson = k.vorlage;
+        _aktuellerPlaintext = k.vorlage;
+        _editorReloadKey = UniqueKey();
       }
     });
   }
 
+  Future<void> _addAnhang() async {
+    final praxisId = ref.read(praxisIdProvider);
+    if (praxisId == null) return;
+    setState(() => _uploadingAnhang = true);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final picked = result.files.first;
+      final bytes = picked.bytes;
+      if (bytes == null) {
+        throw Exception('Datei konnte nicht gelesen werden');
+      }
+      if (bytes.lengthInBytes > 25 * 1024 * 1024) {
+        throw Exception('Datei zu groß (max. 25 MB)');
+      }
+      final ext = (picked.extension ?? '').toLowerCase();
+      String contentType;
+      switch (ext) {
+        case 'pdf':
+          contentType = 'application/pdf';
+          break;
+        case 'jpg':
+        case 'jpeg':
+          contentType = 'image/jpeg';
+          break;
+        case 'png':
+          contentType = 'image/png';
+          break;
+        case 'webp':
+          contentType = 'image/webp';
+          break;
+        case 'heic':
+          contentType = 'image/heic';
+          break;
+        default:
+          throw Exception('Dateityp nicht unterstützt');
+      }
+
+      final upload = await BerichtUploadService.uploadAnhang(
+        bytes: Uint8List.fromList(bytes),
+        fileName: picked.name,
+        contentType: contentType,
+        praxisId: praxisId,
+        berichtId: _berichtId,
+      );
+
+      setState(() {
+        _anhaenge.add(BerichtAnhang(
+          id: const Uuid().v4(),
+          name: picked.name,
+          url: upload.url,
+          contentType: contentType,
+          groesseBytes: bytes.lengthInBytes,
+          hochgeladenAm: DateTime.now(),
+        ));
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Anhang-Fehler: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingAnhang = false);
+    }
+  }
+
+  Future<void> _removeAnhang(BerichtAnhang a) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Anhang entfernen?'),
+        content: Text('"${a.name}" wirklich löschen?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Abbrechen')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.errorColor),
+              child: const Text('Entfernen')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() => _anhaenge.removeWhere((x) => x.id == a.id));
+    BerichtUploadService.deleteAnhang(a.url);
+  }
+
+  Future<void> _openAnhang(BerichtAnhang a) async {
+    final uri = Uri.parse(a.url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_aktuellerPlaintext.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bitte einen Inhalt eingeben')),
+      );
+      return;
+    }
     setState(() => _saving = true);
 
     try {
@@ -129,9 +256,11 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
       if (_isEditing) {
         final updated = widget.args.bericht!.copyWith(
           titel: _titelCtrl.text.trim(),
-          inhalt: _inhaltCtrl.text.trim(),
+          inhalt: _aktuelleDeltaJson,
+          inhaltText: _aktuellerPlaintext,
           kategorie: _kategorie,
           aktualisiertAm: DateTime.now(),
+          anhaenge: _anhaenge,
         );
         await svc.updateBericht(updated);
       } else {
@@ -146,7 +275,9 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
           erstelltAm: DateTime.now(),
           kategorie: _kategorie,
           titel: _titelCtrl.text.trim(),
-          inhalt: _inhaltCtrl.text.trim(),
+          inhalt: _aktuelleDeltaJson,
+          inhaltText: _aktuellerPlaintext,
+          anhaenge: _anhaenge,
         );
         await svc.addBericht(bericht);
       }
@@ -286,24 +417,93 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
             ),
             const SizedBox(height: 16),
 
-            // ── Inhalt ──
-            TextFormField(
-              controller: _inhaltCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Inhalt *',
-                alignLabelWithHint: true,
-                hintText: 'Schreiben Sie hier den Bericht …',
-              ),
-              minLines: 12,
-              maxLines: 30,
-              textCapitalization: TextCapitalization.sentences,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return 'Bitte einen Inhalt eingeben';
-                }
-                return null;
+            // ── Inhalt (Rich Text Editor) ──
+            Text(
+              'Inhalt *',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: AppTheme.slate700,
+                  ),
+            ),
+            const SizedBox(height: 6),
+            BerichtRichEditor(
+              key: _editorReloadKey,
+              initialDelta: _initialInhalt,
+              onChanged: (delta, plain) {
+                _aktuelleDeltaJson = delta;
+                _aktuellerPlaintext = plain;
               },
             ),
+            const SizedBox(height: 6),
+            const Text(
+              'Tipp: H1/H2 für Überschriften · ☐ für Checkbox-Listen · ★ für Aufzählung',
+              style: TextStyle(fontSize: 11, color: AppTheme.slate500),
+            ),
+            const SizedBox(height: 20),
+
+            // ── Anhaenge ──
+            Row(
+              children: [
+                Text(
+                  'Anhänge',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: AppTheme.primaryColor,
+                      ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '(${_anhaenge.length})',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.slate500,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: _uploadingAnhang ? null : _addAnhang,
+                  icon: _uploadingAnhang
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.attach_file, size: 18),
+                  label: const Text('Datei anhängen'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            if (_anhaenge.isEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppTheme.slate50,
+                  border: Border.all(color: AppTheme.slate200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.attach_file_outlined,
+                        size: 16, color: AppTheme.slate400),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Keine Anhänge — PDF, Bilder (JPG/PNG) bis 25 MB möglich',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.slate500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ..._anhaenge.map((a) => _AnhangTile(
+                  anhang: a,
+                  onTap: () => _openAnhang(a),
+                  onRemove: () => _removeAnhang(a),
+                )),
             const SizedBox(height: 24),
 
             // ── Speichern ──
@@ -397,6 +597,97 @@ class _VorlageChip extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnhangTile extends StatelessWidget {
+  final BerichtAnhang anhang;
+  final VoidCallback onTap;
+  final VoidCallback onRemove;
+
+  const _AnhangTile({
+    required this.anhang,
+    required this.onTap,
+    required this.onRemove,
+  });
+
+  IconData get _icon {
+    if (anhang.istPdf) return Icons.picture_as_pdf;
+    if (anhang.istBild) return Icons.image_outlined;
+    return Icons.insert_drive_file_outlined;
+  }
+
+  Color get _color {
+    if (anhang.istPdf) return AppTheme.errorColor;
+    if (anhang.istBild) return AppTheme.accentColor;
+    return AppTheme.slate600;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: AppTheme.slate300),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: _color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(_icon, size: 18, color: _color),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        anhang.name,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.slate900,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        anhang.dateigroesseLesbar,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.slate500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: onRemove,
+                  icon: const Icon(Icons.close, size: 18),
+                  color: AppTheme.slate500,
+                  tooltip: 'Entfernen',
+                ),
+              ],
+            ),
           ),
         ),
       ),
