@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/bericht.dart';
 import '../models/patient.dart';
 import '../models/patient_note.dart';
 import '../models/therapeut.dart';
+import '../services/bericht_service.dart';
 import '../services/firebase_service.dart';
 
 /// Provider fuer den FirebaseService (Singleton).
@@ -65,6 +67,32 @@ final therapeutenProvider = StreamProvider<List<Therapeut>>((ref) {
   }
   final service = ref.watch(firebaseServiceProvider);
   return service.getTherapeuten(praxisId);
+});
+
+/// Bericht-Service.
+final berichtServiceProvider = Provider<BerichtService>((ref) {
+  return BerichtService();
+});
+
+/// Alle Berichte der aktuellen Praxis (chronologisch).
+final berichteProvider = StreamProvider<List<Bericht>>((ref) {
+  final praxisId = ref.watch(praxisIdProvider);
+  if (praxisId == null || praxisId.isEmpty) {
+    return Stream.value(const []);
+  }
+  final svc = ref.watch(berichtServiceProvider);
+  return svc.getBerichte(praxisId);
+});
+
+/// Berichte zu einem bestimmten Patienten.
+final patientBerichteProvider =
+    StreamProvider.family<List<Bericht>, String>((ref, patientId) {
+  final praxisId = ref.watch(praxisIdProvider);
+  if (praxisId == null || praxisId.isEmpty) {
+    return Stream.value(const []);
+  }
+  final svc = ref.watch(berichtServiceProvider);
+  return svc.getBerichteFuerPatient(praxisId, patientId);
 });
 
 /// Aktiver Bottom-Navigation-Tab (0=Dashboard, 1=Warteliste, 2=Statistik, 3=Einstellungen).

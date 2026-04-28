@@ -204,6 +204,11 @@ service cloud.firestore {
       match /tokens/{tokenId} {
         allow read, write: if isPraxisMember(praxisId);
       }
+
+      // Berichte: praxen-weit, alle Mitarbeiter sehen sie
+      match /berichte/{berichtId} {
+        allow read, write: if isPraxisMember(praxisId);
+      }
     }
   }
 }

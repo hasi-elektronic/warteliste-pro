@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/strings.dart';
+import '../../models/bericht.dart';
 import '../../models/dokument.dart';
 import '../../models/patient.dart';
 import '../../models/patient_note.dart';
@@ -15,6 +16,7 @@ import '../../services/dokument_service.dart';
 import '../../utils/theme.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/status_badge.dart';
+import '../bericht/bericht_form_screen.dart';
 
 /// Detail-Ansicht eines einzelnen Patienten.
 ///
@@ -181,6 +183,10 @@ class PatientDetailScreen extends ConsumerWidget {
 
             // ── Dokumente ──
             _DokumenteSection(patient: livePatient),
+            const SizedBox(height: 12),
+
+            // ── Berichte ──
+            _BerichteSection(patient: livePatient),
             const SizedBox(height: 12),
 
             // ── Notizen & Anrufe ──
@@ -397,11 +403,13 @@ class _SectionCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final List<Widget> children;
+  final Widget? action;
 
   const _SectionCard({
     required this.title,
     required this.icon,
     required this.children,
+    this.action,
   });
 
   @override
@@ -423,6 +431,10 @@ class _SectionCard extends StatelessWidget {
                         color: AppTheme.primaryColor,
                       ),
                 ),
+                if (action != null) ...[
+                  const Spacer(),
+                  action!,
+                ],
               ],
             ),
             const Divider(height: 20),
@@ -1498,5 +1510,171 @@ class _DokumentTile extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Berichte Sektion
+// ════════════════════════════════════════════════════════════════
+
+class _BerichteSection extends ConsumerWidget {
+  final Patient patient;
+  const _BerichteSection({required this.patient});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncBerichte = ref.watch(patientBerichteProvider(patient.id));
+    return _SectionCard(
+      title: 'Berichte',
+      icon: Icons.menu_book_outlined,
+      action: TextButton.icon(
+        onPressed: () => Navigator.of(context).pushNamed(
+          '/bericht/neu',
+          arguments: BerichtFormArgs(patient: patient),
+        ),
+        icon: const Icon(Icons.add, size: 18),
+        label: const Text('Neuer Bericht'),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ),
+      children: [
+        asyncBerichte.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          ),
+          error: (e, _) => Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              'Fehler: $e',
+              style: const TextStyle(color: AppTheme.errorColor, fontSize: 12),
+            ),
+          ),
+          data: (berichte) {
+            if (berichte.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  'Noch keine Berichte für diesen Patienten.',
+                  style: TextStyle(color: AppTheme.slate500, fontSize: 13),
+                ),
+              );
+            }
+            final intl = DateFormat('dd.MM.yyyy · HH:mm');
+            return Column(
+              children: berichte
+                  .map((b) => _BerichtTile(bericht: b, fmt: intl))
+                  .toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _BerichtTile extends StatelessWidget {
+  final Bericht bericht;
+  final DateFormat fmt;
+  const _BerichtTile({required this.bericht, required this.fmt});
+
+  Color _color() {
+    switch (bericht.kategorie) {
+      case BerichtKategorie.verlaufsbericht:
+        return AppTheme.successColor;
+      case BerichtKategorie.anamnese:
+        return AppTheme.primaryColor;
+      case BerichtKategorie.telefonat:
+        return AppTheme.accentColor;
+      case BerichtKategorie.uebergabe:
+        return AppTheme.warningColor;
+      case BerichtKategorie.allgemein:
+        return AppTheme.slate500;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _color();
+    return InkWell(
+      onTap: () => Navigator.of(context).pushNamed(
+        '/bericht/bearbeiten',
+        arguments: BerichtFormArgs(bericht: bericht),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: AppTheme.slate200),
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 32,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          bericht.kategorie.label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: color,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          bericht.titel,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.slate900,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${fmt.format(bericht.erstelltAm)} · ${bericht.authorName ?? bericht.authorEmail}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.slate500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right,
+                size: 18, color: AppTheme.slate400),
+          ],
+        ),
+      ),
+    );
   }
 }

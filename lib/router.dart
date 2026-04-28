@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'models/patient.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
+import 'screens/bericht/bericht_form_screen.dart';
+import 'screens/bericht/berichte_liste_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/patient/patient_form_screen.dart';
 import 'screens/warteliste/patient_detail_screen.dart';
@@ -36,6 +38,21 @@ class AppRouter {
         final patient = settings.arguments as Patient;
         return MaterialPageRoute(
           builder: (_) => PatientDetailScreen(patient: patient),
+        );
+      case '/berichte':
+        return MaterialPageRoute(
+          builder: (_) => const BerichteListeScreen(),
+        );
+      case '/bericht/neu':
+        final args = (settings.arguments as BerichtFormArgs?) ??
+            const BerichtFormArgs();
+        return MaterialPageRoute(
+          builder: (_) => BerichtFormScreen(args: args),
+        );
+      case '/bericht/bearbeiten':
+        final args = settings.arguments as BerichtFormArgs;
+        return MaterialPageRoute(
+          builder: (_) => BerichtFormScreen(args: args),
         );
       default:
         return MaterialPageRoute(

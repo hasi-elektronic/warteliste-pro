@@ -690,6 +690,21 @@ class _DashboardBody extends ConsumerWidget {
                   onTap: () => Navigator.of(context).pushNamed('/patient/neu'),
                 ),
                 _QuickAction(
+                  icon: Icons.menu_book_outlined,
+                  label: 'Berichte',
+                  color: AppTheme.successColor,
+                  onTap: () =>
+                      Navigator.of(context).pushNamed('/berichte'),
+                ),
+                _QuickAction(
+                  icon: Icons.note_add_outlined,
+                  label: 'Neuer Bericht',
+                  color: AppTheme.successColor,
+                  onTap: () => Navigator.of(context).pushNamed(
+                    '/bericht/neu',
+                  ),
+                ),
+                _QuickAction(
                   icon: Icons.list_alt_outlined,
                   label: 'Warteliste',
                   color: AppTheme.statusWartend,
