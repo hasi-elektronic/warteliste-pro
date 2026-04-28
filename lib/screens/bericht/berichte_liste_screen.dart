@@ -9,6 +9,7 @@ import '../../models/bericht_anhang.dart';
 import '../../providers/patienten_provider.dart';
 import '../../providers/standort_provider.dart';
 import '../../services/bericht_pdf_service.dart';
+import '../../services/bericht_upload_service.dart';
 import '../../utils/theme.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/bericht_rich_editor.dart';
@@ -696,10 +697,13 @@ class _AnhangViewTile extends StatelessWidget {
   }
 
   Future<void> _open() async {
-    final uri = Uri.parse(anhang.url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    try {
+      final signed = await BerichtUploadService.getSignedUrl(anhang.url);
+      final uri = Uri.parse(signed);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {/* silent */}
   }
 
   @override

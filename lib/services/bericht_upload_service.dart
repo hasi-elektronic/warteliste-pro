@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
 // Conditional import (Web vs Mobile)
@@ -39,6 +41,31 @@ class BerichtUploadService {
     );
 
     return (url: url, key: key);
+  }
+
+  /// Erzeugt eine kurzlebige signierte URL fuer einen Anhang
+  /// (10 Minuten gueltig, kein Auth-Header noetig).
+  static Future<String> getSignedUrl(String fileUrl) async {
+    // fileUrl ist z.B. https://...workers.dev/file/praxen/.../berichte/.../uuid.pdf
+    // Wir extrahieren den Key aus der URL.
+    final filePrefix = '$r2Base/file/';
+    if (!fileUrl.startsWith(filePrefix)) {
+      // Bereits eine andere URL — direkt zurueckgeben
+      return fileUrl;
+    }
+    final key = fileUrl.substring(filePrefix.length).split('?').first;
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (idToken == null) throw Exception('Nicht angemeldet');
+
+    final resp = await http.post(
+      Uri.parse('$r2Base/sign?key=${Uri.encodeComponent(key)}'),
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    if (resp.statusCode != 200) {
+      throw Exception('Sign-Anfrage fehlgeschlagen: ${resp.statusCode} ${resp.body}');
+    }
+    final body = jsonDecode(resp.body) as Map<String, dynamic>;
+    return body['url'] as String;
   }
 
   /// Loescht einen Anhang anhand der URL.

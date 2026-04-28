@@ -15,6 +15,7 @@
 const FIREBASE_PROJECT_ID = 'warteliste-pro';
 const JWK_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25 MB
+const SIGNED_URL_TTL_SECONDS = 600; // 10 Minuten
 
 const ALLOWED_ORIGINS = new Set([
   'https://warteliste-pro.pages.dev',
@@ -150,6 +151,45 @@ function extractPraxisId(key) {
   return praxisId;
 }
 
+// --------- HMAC Signed URL ---------
+async function hmacSign(secret, message) {
+  const enc = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sigBuf = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(message));
+  // base64url
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(sigBuf)));
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function buildSignedUrl(env, origin, key) {
+  if (!env.R2_SIGN_SECRET) {
+    throw new Error('R2_SIGN_SECRET not configured');
+  }
+  const exp = Math.floor(Date.now() / 1000) + SIGNED_URL_TTL_SECONDS;
+  const sig = await hmacSign(env.R2_SIGN_SECRET, `${key}|${exp}`);
+  return `${origin}/file/${key}?sig=${sig}&exp=${exp}`;
+}
+
+async function verifySignedUrl(env, key, sig, expStr) {
+  if (!env.R2_SIGN_SECRET || !sig || !expStr) return false;
+  const exp = parseInt(expStr, 10);
+  if (!exp || Math.floor(Date.now() / 1000) > exp) return false;
+  const expected = await hmacSign(env.R2_SIGN_SECRET, `${key}|${exp}`);
+  // Constant-time compare
+  if (sig.length !== expected.length) return false;
+  let result = 0;
+  for (let i = 0; i < sig.length; i++) {
+    result |= sig.charCodeAt(i) ^ expected.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 // --------- Auth Middleware ---------
 async function authorize(request, key, cors) {
   const authHeader = request.headers.get('Authorization') || '';
@@ -224,11 +264,38 @@ export default {
       return jsonResponse({ url: fileUrl, key }, 200, cors);
     }
 
-    // Download: GET /file/path/to/file
-    if (request.method === 'GET' && url.pathname.startsWith('/file/')) {
-      const key = decodeURIComponent(url.pathname.slice(6));
+    // Sign: POST /sign?key=path/to/file → erstellt signierte URL
+    if (request.method === 'POST' && url.pathname === '/sign') {
+      const key = url.searchParams.get('key');
+      if (!key) return jsonResponse({ error: 'Missing key' }, 400, cors);
       const auth = await authorize(request, key, cors);
       if (auth.error) return auth.error;
+      try {
+        const signedUrl = await buildSignedUrl(env, url.origin, key);
+        return jsonResponse({ url: signedUrl, expiresIn: SIGNED_URL_TTL_SECONDS }, 200, cors);
+      } catch (e) {
+        return jsonResponse({ error: 'Signing failed: ' + e.message }, 500, cors);
+      }
+    }
+
+    // Download: GET /file/path/to/file
+    // Akzeptiert entweder Bearer-Auth oder ?sig=...&exp=... signierte URL.
+    if (request.method === 'GET' && url.pathname.startsWith('/file/')) {
+      const key = decodeURIComponent(url.pathname.slice(6));
+      const sig = url.searchParams.get('sig');
+      const exp = url.searchParams.get('exp');
+
+      if (sig && exp) {
+        // Signierte URL — kein Bearer noetig
+        const valid = await verifySignedUrl(env, key, sig, exp);
+        if (!valid) {
+          return jsonResponse({ error: 'Invalid or expired signature' }, 403, cors);
+        }
+      } else {
+        // Klassischer Bearer-Auth-Pfad
+        const auth = await authorize(request, key, cors);
+        if (auth.error) return auth.error;
+      }
 
       const object = await env.BUCKET.get(key);
       if (!object) return jsonResponse({ error: 'Not found' }, 404, cors);

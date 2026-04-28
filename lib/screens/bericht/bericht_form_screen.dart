@@ -228,9 +228,21 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
   }
 
   Future<void> _openAnhang(BerichtAnhang a) async {
-    final uri = Uri.parse(a.url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    try {
+      final signed = await BerichtUploadService.getSignedUrl(a.url);
+      final uri = Uri.parse(signed);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Datei konnte nicht geöffnet werden: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
     }
   }
 
