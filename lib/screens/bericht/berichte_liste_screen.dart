@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 
 import '../../models/bericht.dart';
 import '../../providers/patienten_provider.dart';
+import '../../providers/standort_provider.dart';
+import '../../services/bericht_pdf_service.dart';
 import '../../utils/theme.dart';
 import '../../widgets/app_header.dart';
 import 'bericht_form_screen.dart';
@@ -447,14 +449,35 @@ class _BerichtDetailSheet extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
-            // Aktionen
+            // PDF-Aktionen
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
+                    onPressed: () => _exportPdf(context, ref, share: false),
+                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                    label: const Text('Drucken'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _exportPdf(context, ref, share: true),
+                    icon: const Icon(Icons.ios_share, size: 18),
+                    label: const Text('PDF teilen'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Bearbeiten / Löschen
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton.icon(
                     onPressed: () => _confirmDelete(context, ref),
                     icon: const Icon(Icons.delete_outline,
-                        color: AppTheme.errorColor),
+                        color: AppTheme.errorColor, size: 18),
                     label: const Text('Löschen',
                         style: TextStyle(color: AppTheme.errorColor)),
                   ),
@@ -479,6 +502,40 @@ class _BerichtDetailSheet extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _exportPdf(BuildContext context, WidgetRef ref,
+      {required bool share}) async {
+    try {
+      final aktivePraxis = ref.read(aktivesPraxisProvider);
+      final praxisName = aktivePraxis?.name ?? 'WarteListe Pro';
+      final adresse = aktivePraxis?.adresse ?? '';
+      final telefon = aktivePraxis?.telefon ?? '';
+      if (share) {
+        await BerichtPdfService.teileBericht(
+          bericht: bericht,
+          praxisName: praxisName,
+          praxisAdresse: adresse,
+          praxisTelefon: telefon,
+        );
+      } else {
+        await BerichtPdfService.druckeBericht(
+          bericht: bericht,
+          praxisName: praxisName,
+          praxisAdresse: adresse,
+          praxisTelefon: telefon,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF-Export fehlgeschlagen: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {

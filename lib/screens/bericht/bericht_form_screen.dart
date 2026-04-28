@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/bericht.dart';
 import '../../models/patient.dart';
 import '../../providers/patienten_provider.dart';
+import '../../providers/standort_provider.dart';
+import '../../services/bericht_pdf_service.dart';
 import '../../utils/theme.dart';
 import '../../widgets/app_header.dart';
 
@@ -68,6 +70,34 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
     _titelCtrl.dispose();
     _inhaltCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _printPdf() async {
+    if (widget.args.bericht == null) return;
+    try {
+      final praxis = ref.read(aktivesPraxisProvider);
+      // Aktuelle (evtl. ungespeicherte) Werte aus Form nehmen
+      final aktuell = widget.args.bericht!.copyWith(
+        titel: _titelCtrl.text.trim(),
+        inhalt: _inhaltCtrl.text.trim(),
+        kategorie: _kategorie,
+      );
+      await BerichtPdfService.druckeBericht(
+        bericht: aktuell,
+        praxisName: praxis?.name ?? 'WarteListe Pro',
+        praxisAdresse: praxis?.adresse ?? '',
+        praxisTelefon: praxis?.telefon ?? '',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF-Export fehlgeschlagen: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
   }
 
   void _applyVorlage(BerichtKategorie k) {
@@ -150,6 +180,16 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
             ? Icons.edit_note_outlined
             : Icons.note_add_outlined,
         showBackButton: true,
+        actions: _isEditing
+            ? [
+                HeaderIconAction(
+                  icon: Icons.picture_as_pdf_outlined,
+                  tooltip: 'Als PDF drucken',
+                  onTap: () => _printPdf(),
+                ),
+                const SizedBox(width: 4),
+              ]
+            : const [],
       ),
       body: Form(
         key: _formKey,
