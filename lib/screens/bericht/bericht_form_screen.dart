@@ -16,6 +16,7 @@ import '../../providers/patienten_provider.dart';
 import '../../providers/standort_provider.dart';
 import '../../services/bericht_pdf_service.dart';
 import '../../services/bericht_upload_service.dart';
+import '../../services/praxis_briefpapier.dart';
 import '../../utils/theme.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/bericht_rich_editor.dart';
@@ -90,6 +91,7 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
     if (widget.args.bericht == null) return;
     try {
       final praxis = ref.read(aktivesPraxisProvider);
+      final briefpapier = await PraxisBriefpapierService.forPraxis(praxis);
       final aktuell = widget.args.bericht!.copyWith(
         titel: _titelCtrl.text.trim(),
         inhalt: _aktuelleDeltaJson,
@@ -99,9 +101,7 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
       );
       await BerichtPdfService.druckeBericht(
         bericht: aktuell,
-        praxisName: praxis?.name ?? 'WarteListe Pro',
-        praxisAdresse: praxis?.adresse ?? '',
-        praxisTelefon: praxis?.telefon ?? '',
+        briefpapier: briefpapier,
       );
     } catch (e) {
       if (mounted) {

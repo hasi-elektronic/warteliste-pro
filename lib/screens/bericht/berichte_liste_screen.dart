@@ -10,6 +10,7 @@ import '../../providers/patienten_provider.dart';
 import '../../providers/standort_provider.dart';
 import '../../services/bericht_pdf_service.dart';
 import '../../services/bericht_upload_service.dart';
+import '../../services/praxis_briefpapier.dart';
 import '../../utils/theme.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/bericht_rich_editor.dart';
@@ -537,22 +538,17 @@ class _BerichtDetailSheet extends ConsumerWidget {
       {required bool share}) async {
     try {
       final aktivePraxis = ref.read(aktivesPraxisProvider);
-      final praxisName = aktivePraxis?.name ?? 'WarteListe Pro';
-      final adresse = aktivePraxis?.adresse ?? '';
-      final telefon = aktivePraxis?.telefon ?? '';
+      final briefpapier =
+          await PraxisBriefpapierService.forPraxis(aktivePraxis);
       if (share) {
         await BerichtPdfService.teileBericht(
           bericht: bericht,
-          praxisName: praxisName,
-          praxisAdresse: adresse,
-          praxisTelefon: telefon,
+          briefpapier: briefpapier,
         );
       } else {
         await BerichtPdfService.druckeBericht(
           bericht: bericht,
-          praxisName: praxisName,
-          praxisAdresse: adresse,
-          praxisTelefon: telefon,
+          briefpapier: briefpapier,
         );
       }
     } catch (e) {
