@@ -555,12 +555,26 @@ class _BerichtDetailSheet extends ConsumerWidget {
           briefpapier: briefpapier,
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      // ignore: avoid_print
+      print('PDF Error: $e\n$st');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('PDF-Export fehlgeschlagen: $e'),
-            backgroundColor: AppTheme.errorColor,
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            icon: const Icon(Icons.error_outline,
+                color: AppTheme.errorColor, size: 36),
+            title: const Text('PDF-Export fehlgeschlagen'),
+            content: SingleChildScrollView(
+              child: SelectableText('$e',
+                  style: const TextStyle(fontSize: 12)),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Schließen'),
+              ),
+            ],
           ),
         );
       }
