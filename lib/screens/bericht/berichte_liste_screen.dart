@@ -176,6 +176,8 @@ class _BerichteListeScreenState extends ConsumerState<BerichteListeScreen> {
 
   static IconData _iconFor(BerichtKategorie k) {
     switch (k) {
+      case BerichtKategorie.brief:
+        return Icons.mail_outline;
       case BerichtKategorie.verlaufsbericht:
         return Icons.trending_up;
       case BerichtKategorie.anamnese:
@@ -334,6 +336,8 @@ class _BerichtCard extends ConsumerWidget {
 
   Color _colorFor(BerichtKategorie k) {
     switch (k) {
+      case BerichtKategorie.brief:
+        return const Color(0xFF1A3FA0); // Menauer-Blau
       case BerichtKategorie.verlaufsbericht:
         return AppTheme.successColor;
       case BerichtKategorie.anamnese:

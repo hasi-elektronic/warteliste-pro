@@ -34,6 +34,7 @@ class BerichtPdfService {
     final fmtDate = DateFormat('dd.MM.yyyy');
     final color = _pdfColorFor(bericht.kategorie);
     final accent = PdfColor.fromInt(0xFF1A3FA0); // Menauer-Blau, sonst neutral
+    final isBrief = bericht.kategorie == BerichtKategorie.brief;
 
     // Logo als pw.Image (falls vorhanden)
     final pw.Widget? logoWidget = briefpapier.logoBytes != null
@@ -54,7 +55,8 @@ class BerichtPdfService {
             _buildHeader(briefpapier, logoWidget, accent, ctx, fmtDate),
         footer: (ctx) => _buildFooter(briefpapier, accent, ctx),
         build: (ctx) => [
-          // ── Empfänger-Block (links) — bei patientbezogenem Bericht ──
+          // ── Empfänger-Block (links) ──
+          // Bei Brief-Kategorie: "EMPFÄNGER", sonst "PATIENT"
           if (bericht.patientName != null && bericht.patientName!.isNotEmpty)
             pw.Container(
               margin: const pw.EdgeInsets.only(top: 12),
@@ -74,7 +76,7 @@ class BerichtPdfService {
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(
-                            'PATIENT',
+                            isBrief ? 'EMPFÄNGER' : 'PATIENT',
                             style: pw.TextStyle(
                               fontSize: 8,
                               color: PdfColors.grey600,
@@ -99,68 +101,99 @@ class BerichtPdfService {
               ),
             ),
 
-          // ── Kategorie-Tag (kleiner, rechts) ──
-          pw.SizedBox(height: 18),
-          pw.Row(
-            children: [
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 4),
-                decoration: pw.BoxDecoration(
-                  color: color.shade(0.92),
-                  borderRadius: pw.BorderRadius.circular(3),
-                  border: pw.Border.all(color: color, width: 0.6),
-                ),
-                child: pw.Text(
-                  bericht.kategorie.label.toUpperCase(),
-                  style: pw.TextStyle(
-                    fontSize: 9,
-                    color: color,
-                    letterSpacing: 1.2,
-                    fontWeight: pw.FontWeight.bold,
+          // ── Kategorie-Tag (bei Brief ausgeblendet — Brief-Layout brauchts nicht) ──
+          if (!isBrief) ...[
+            pw.SizedBox(height: 18),
+            pw.Row(
+              children: [
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: pw.BoxDecoration(
+                    color: color.shade(0.92),
+                    borderRadius: pw.BorderRadius.circular(3),
+                    border: pw.Border.all(color: color, width: 0.6),
+                  ),
+                  child: pw.Text(
+                    bericht.kategorie.label.toUpperCase(),
+                    style: pw.TextStyle(
+                      fontSize: 9,
+                      color: color,
+                      letterSpacing: 1.2,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          pw.SizedBox(height: 8),
+              ],
+            ),
+            pw.SizedBox(height: 8),
+          ] else
+            pw.SizedBox(height: 18),
 
           // ── Betreff / Titel ──
-          pw.Text(
-            bericht.titel.isEmpty ? '(ohne Titel)' : bericht.titel,
-            style: pw.TextStyle(
-              fontSize: 20,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColors.grey900,
-              letterSpacing: -0.3,
+          // Bei Brief: "Betrifft: <titel>" Format; sonst nur Titel groß.
+          if (isBrief && bericht.titel.isNotEmpty)
+            pw.RichText(
+              text: pw.TextSpan(
+                children: [
+                  pw.TextSpan(
+                    text: 'Betrifft: ',
+                    style: pw.TextStyle(
+                      fontSize: 13,
+                      color: PdfColors.grey700,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.TextSpan(
+                    text: bericht.titel,
+                    style: pw.TextStyle(
+                      fontSize: 13,
+                      color: PdfColors.grey900,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            pw.Text(
+              bericht.titel.isEmpty ? '(ohne Titel)' : bericht.titel,
+              style: pw.TextStyle(
+                fontSize: 20,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.grey900,
+                letterSpacing: -0.3,
+              ),
             ),
-          ),
           pw.SizedBox(height: 4),
 
-          // ── Meta-Zeile (Verfasser · Datum · ggf. Aktualisiert) ──
-          pw.Row(
-            children: [
-              pw.Text(
-                'Verfasst von ${bericht.authorName ?? bericht.authorEmail}',
-                style: const pw.TextStyle(
-                    fontSize: 10, color: PdfColors.grey600),
-              ),
-              pw.Text(
-                '  ·  ${DateFormat('dd.MM.yyyy · HH:mm').format(bericht.erstelltAm)}',
-                style: const pw.TextStyle(
-                    fontSize: 10, color: PdfColors.grey600),
-              ),
-              if (bericht.aktualisiertAm != null)
+          // ── Meta-Zeile (bei Brief minimal: nur Verfasser, kein Datum nochmal) ──
+          if (!isBrief) ...[
+            pw.Row(
+              children: [
                 pw.Text(
-                  '  ·  aktualisiert ${DateFormat('dd.MM.yyyy').format(bericht.aktualisiertAm!)}',
+                  'Verfasst von ${bericht.authorName ?? bericht.authorEmail}',
                   style: const pw.TextStyle(
                       fontSize: 10, color: PdfColors.grey600),
                 ),
-            ],
-          ),
-          pw.SizedBox(height: 14),
-          pw.Container(height: 0.5, color: PdfColors.grey300),
-          pw.SizedBox(height: 14),
+                pw.Text(
+                  '  ·  ${DateFormat('dd.MM.yyyy · HH:mm').format(bericht.erstelltAm)}',
+                  style: const pw.TextStyle(
+                      fontSize: 10, color: PdfColors.grey600),
+                ),
+                if (bericht.aktualisiertAm != null)
+                  pw.Text(
+                    '  ·  aktualisiert ${DateFormat('dd.MM.yyyy').format(bericht.aktualisiertAm!)}',
+                    style: const pw.TextStyle(
+                        fontSize: 10, color: PdfColors.grey600),
+                  ),
+              ],
+            ),
+            pw.SizedBox(height: 14),
+            pw.Container(height: 0.5, color: PdfColors.grey300),
+            pw.SizedBox(height: 14),
+          ] else
+            pw.SizedBox(height: 18),
 
           // ── Inhalt: Quill Delta -> PDF widgets ──
           ..._renderQuillContent(bericht.inhalt, bericht.inhaltText),
@@ -552,6 +585,8 @@ class BerichtPdfService {
 
   static PdfColor _pdfColorFor(BerichtKategorie k) {
     switch (k) {
+      case BerichtKategorie.brief:
+        return PdfColor.fromInt(0xFF1A3FA0); // Menauer-Blau
       case BerichtKategorie.verlaufsbericht:
         return PdfColor.fromInt(0xFF059669);
       case BerichtKategorie.anamnese:

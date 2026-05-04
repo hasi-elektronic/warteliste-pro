@@ -1583,6 +1583,8 @@ class _BerichtTile extends StatelessWidget {
 
   Color _color() {
     switch (bericht.kategorie) {
+      case BerichtKategorie.brief:
+        return const Color(0xFF1A3FA0);
       case BerichtKategorie.verlaufsbericht:
         return AppTheme.successColor;
       case BerichtKategorie.anamnese:

@@ -599,6 +599,8 @@ class _VorlageChip extends StatelessWidget {
 
   IconData _iconFor(BerichtKategorie k) {
     switch (k) {
+      case BerichtKategorie.brief:
+        return Icons.mail_outline;
       case BerichtKategorie.verlaufsbericht:
         return Icons.trending_up;
       case BerichtKategorie.anamnese:

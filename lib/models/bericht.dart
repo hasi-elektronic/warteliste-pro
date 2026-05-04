@@ -4,6 +4,7 @@ import 'bericht_anhang.dart';
 
 /// Kategorie eines Berichts.
 enum BerichtKategorie {
+  brief,
   verlaufsbericht,
   anamnese,
   telefonat,
@@ -12,6 +13,8 @@ enum BerichtKategorie {
 
   String get label {
     switch (this) {
+      case BerichtKategorie.brief:
+        return 'Brief';
       case BerichtKategorie.verlaufsbericht:
         return 'Verlaufsbericht';
       case BerichtKategorie.anamnese:
@@ -28,6 +31,8 @@ enum BerichtKategorie {
   /// Material Icon für diese Kategorie.
   String get iconName {
     switch (this) {
+      case BerichtKategorie.brief:
+        return 'mail_outline';
       case BerichtKategorie.verlaufsbericht:
         return 'trending_up';
       case BerichtKategorie.anamnese:
@@ -51,6 +56,28 @@ enum BerichtKategorie {
   /// Vorlage-Text fuer die jeweilige Kategorie.
   String get vorlage {
     switch (this) {
+      case BerichtKategorie.brief:
+        return '''Frau / Herr [Name]
+[Straße und Hausnummer]
+[PLZ Ort]
+
+
+
+Betrifft: [Thema des Schreibens]
+
+
+Sehr geehrte Frau / Herr [Name],
+
+[Hier den Inhalt des Schreibens einfügen]
+
+[Weitere Absätze nach Bedarf]
+
+
+
+Mit freundlichen Grüßen
+
+
+[Name des Verfassers]''';
       case BerichtKategorie.verlaufsbericht:
         return '''Sitzung: ___ von ___
 Dauer: ___ Min.
