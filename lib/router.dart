@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'models/bericht.dart';
 import 'models/patient.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/bericht/bericht_form_screen.dart';
 import 'screens/bericht/berichte_liste_screen.dart';
+import 'screens/bericht/verordnungsbericht_form_screen.dart';
+import 'screens/bericht/vordruck_liste_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/patient/patient_form_screen.dart';
 import 'screens/warteliste/patient_detail_screen.dart';
@@ -53,6 +56,22 @@ class AppRouter {
         final args = settings.arguments as BerichtFormArgs;
         return MaterialPageRoute(
           builder: (_) => BerichtFormScreen(args: args),
+        );
+      case '/vordrucke':
+        return MaterialPageRoute(
+          builder: (_) => const VordruckListeScreen(),
+        );
+      case '/verordnungsbericht/neu':
+        final patient = settings.arguments as Patient?;
+        return MaterialPageRoute(
+          builder: (_) =>
+              VerordnungsberichtFormScreen(patient: patient),
+        );
+      case '/verordnungsbericht/bearbeiten':
+        final bericht = settings.arguments as Bericht;
+        return MaterialPageRoute(
+          builder: (_) => VerordnungsberichtFormScreen(
+              berichtToEdit: bericht),
         );
       default:
         return MaterialPageRoute(

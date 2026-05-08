@@ -705,6 +705,13 @@ class _DashboardBody extends ConsumerWidget {
                   ),
                 ),
                 _QuickAction(
+                  icon: Icons.folder_special_outlined,
+                  label: 'Vordrucke',
+                  color: const Color(0xFF1A3FA0),
+                  onTap: () =>
+                      Navigator.of(context).pushNamed('/vordrucke'),
+                ),
+                _QuickAction(
                   icon: Icons.list_alt_outlined,
                   label: 'Warteliste',
                   color: AppTheme.statusWartend,

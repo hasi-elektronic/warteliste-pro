@@ -15,6 +15,20 @@ Future<void> showPdf(Uint8List bytes, String filename) async {
   });
 }
 
+/// Web: HTML in neuem Tab öffnen, automatisch Browser-Print starten.
+/// Nutzer bekommt System-Druck-Dialog (incl. "Als PDF speichern").
+Future<void> openHtmlForPrint(String htmlContent, String filename) async {
+  // Blob URL mit HTML — wird im neuen Tab geladen
+  final blob = html.Blob([htmlContent], 'text/html;charset=utf-8');
+  final url = html.Url.createObjectUrlFromBlob(blob);
+  html.window.open(url, '_blank');
+  Future.delayed(const Duration(minutes: 5), () {
+    try {
+      html.Url.revokeObjectUrl(url);
+    } catch (_) {}
+  });
+}
+
 /// Web: PDF als Download anbieten.
 Future<void> sharePdf(Uint8List bytes, String filename) async {
   final blob = html.Blob([bytes], 'application/pdf');

@@ -46,6 +46,9 @@ final versicherungFilterProvider = StateProvider<String?>((ref) => null);
 /// Ausgewaehlter Monats-Filter (null = alle).
 final monatFilterProvider = StateProvider<String?>((ref) => null);
 
+/// Ausgewaehlter Jahres-Filter (null = alle). Format: 'YYYY'.
+final jahrFilterProvider = StateProvider<String?>((ref) => null);
+
 /// Ausgewaehlter Prioritaets-Filter (null = alle).
 final prioritaetFilterProvider =
     StateProvider<PatientPrioritaet?>((ref) => null);
@@ -126,6 +129,7 @@ final gefiltertePatientenProvider = Provider<AsyncValue<List<Patient>>>((ref) {
   final stoerungsbildFilter = ref.watch(stoerungsbildFilterProvider);
   final versicherungFilter = ref.watch(versicherungFilterProvider);
   final monatFilter = ref.watch(monatFilterProvider);
+  final jahrFilter = ref.watch(jahrFilterProvider);
   final prioritaetFilter = ref.watch(prioritaetFilterProvider);
   final nurRezeptWarnung = ref.watch(nurRezeptWarnungProvider);
   final nurHausbesuch = ref.watch(nurHausbesuchProvider);
@@ -161,6 +165,13 @@ final gefiltertePatientenProvider = Provider<AsyncValue<List<Patient>>>((ref) {
     // Filter: Monat
     if (monatFilter != null) {
       result = result.where((p) => p.monat == monatFilter).toList();
+    }
+
+    // Filter: Jahr
+    if (jahrFilter != null) {
+      result = result
+          .where((p) => p.anmeldung.year.toString() == jahrFilter)
+          .toList();
     }
 
     // Filter: Prioritaet

@@ -4,6 +4,7 @@ import 'bericht_anhang.dart';
 
 /// Kategorie eines Berichts.
 enum BerichtKategorie {
+  verordnungsbericht,
   brief,
   verlaufsbericht,
   anamnese,
@@ -13,6 +14,8 @@ enum BerichtKategorie {
 
   String get label {
     switch (this) {
+      case BerichtKategorie.verordnungsbericht:
+        return 'Verordnungs-Bericht';
       case BerichtKategorie.brief:
         return 'Brief';
       case BerichtKategorie.verlaufsbericht:
@@ -31,6 +34,8 @@ enum BerichtKategorie {
   /// Material Icon für diese Kategorie.
   String get iconName {
     switch (this) {
+      case BerichtKategorie.verordnungsbericht:
+        return 'assignment';
       case BerichtKategorie.brief:
         return 'mail_outline';
       case BerichtKategorie.verlaufsbericht:
@@ -56,28 +61,15 @@ enum BerichtKategorie {
   /// Vorlage-Text fuer die jeweilige Kategorie.
   String get vorlage {
     switch (this) {
+      case BerichtKategorie.verordnungsbericht:
+        // Strukturierte Daten — kein Plaintext-Vorlagentext.
+        return '';
       case BerichtKategorie.brief:
-        return '''Frau / Herr [Name]
-[Straße und Hausnummer]
-[PLZ Ort]
+        // Nur die Anrede + Inhalt — Empfaenger/Betrifft/Datum/Schluss
+        // werden vom PDF-Generator automatisch erzeugt.
+        return '''Sehr geehrte Damen und Herren,
 
-
-
-Betrifft: [Thema des Schreibens]
-
-
-Sehr geehrte Frau / Herr [Name],
-
-[Hier den Inhalt des Schreibens einfügen]
-
-[Weitere Absätze nach Bedarf]
-
-
-
-Mit freundlichen Grüßen
-
-
-[Name des Verfassers]''';
+[Hier den Inhalt des Schreibens einfügen]''';
       case BerichtKategorie.verlaufsbericht:
         return '''Sitzung: ___ von ___
 Dauer: ___ Min.
@@ -176,6 +168,10 @@ class Bericht {
   /// Datei-Anhaenge (PDFs, Bilder).
   final List<BerichtAnhang> anhaenge;
 
+  /// Optional: Datum, das im Brief erscheinen soll (z.B. fuer rueckdatierte
+  /// Schreiben). Falls null, wird im PDF erstelltAm bzw. heute verwendet.
+  final DateTime? briefDatum;
+
   const Bericht({
     required this.id,
     required this.praxisId,
@@ -191,6 +187,7 @@ class Bericht {
     required this.inhalt,
     this.inhaltText = '',
     this.anhaenge = const [],
+    this.briefDatum,
   });
 
   factory Bericht.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -212,6 +209,7 @@ class Bericht {
       anhaenge: (d['anhaenge'] as List<dynamic>? ?? [])
           .map((m) => BerichtAnhang.fromMap(Map<String, dynamic>.from(m as Map)))
           .toList(),
+      briefDatum: (d['briefDatum'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -231,6 +229,8 @@ class Bericht {
       'inhalt': inhalt,
       'inhaltText': inhaltText,
       'anhaenge': anhaenge.map((a) => a.toMap()).toList(),
+      'briefDatum':
+          briefDatum != null ? Timestamp.fromDate(briefDatum!) : null,
     };
   }
 
@@ -244,6 +244,8 @@ class Bericht {
     String? patientId,
     String? patientName,
     List<BerichtAnhang>? anhaenge,
+    DateTime? briefDatum,
+    bool clearBriefDatum = false,
   }) {
     return Bericht(
       id: id ?? this.id,
@@ -260,6 +262,7 @@ class Bericht {
       inhalt: inhalt ?? this.inhalt,
       inhaltText: inhaltText ?? this.inhaltText,
       anhaenge: anhaenge ?? this.anhaenge,
+      briefDatum: clearBriefDatum ? null : (briefDatum ?? this.briefDatum),
     );
   }
 }

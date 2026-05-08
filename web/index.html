@@ -85,6 +85,20 @@
     <div class="bar"></div>
   </div>
   <script>
+    // Aktiv: alle bestehenden Service Worker abmelden — verhindert,
+    // dass eine veraltete JavaScript-Bundle-Version aus dem Cache geladen wird.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        for (var r of regs) { r.unregister(); }
+      });
+      // Auch die Caches leeren (Workbox Cache, etc.)
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (var n of names) caches.delete(n);
+        });
+      }
+    }
+
     // Remove splash when Flutter first paints
     window.addEventListener('flutter-first-frame', function () {
       var el = document.getElementById('splash');

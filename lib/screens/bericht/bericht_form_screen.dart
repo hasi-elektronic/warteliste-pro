@@ -54,6 +54,7 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
   late BerichtKategorie _kategorie;
   Patient? _patient;
   late List<BerichtAnhang> _anhaenge;
+  DateTime? _briefDatum;
   bool _saving = false;
   bool _uploadingAnhang = false;
   late final String _berichtId;
@@ -66,14 +67,14 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
     final b = widget.args.bericht;
     _titelCtrl = TextEditingController(text: b?.titel ?? '');
 
-    final defaultKategorie = widget.args.kategorie ??
-        (widget.args.patient != null
-            ? BerichtKategorie.verlaufsbericht
-            : BerichtKategorie.allgemein);
+    // Default immer Allgemein — User soll bewusst eine Vorlage waehlen.
+    final defaultKategorie =
+        widget.args.kategorie ?? BerichtKategorie.allgemein;
 
     _kategorie = b?.kategorie ?? defaultKategorie;
     _patient = widget.args.patient;
     _anhaenge = b?.anhaenge.toList() ?? [];
+    _briefDatum = b?.briefDatum;
     _berichtId = (b?.id.isNotEmpty ?? false) ? b!.id : const Uuid().v4();
 
     _initialInhalt = b?.inhalt ?? defaultKategorie.vorlage;
@@ -98,6 +99,9 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
         inhaltText: _aktuellerPlaintext,
         kategorie: _kategorie,
         anhaenge: _anhaenge,
+        briefDatum: _briefDatum,
+        clearBriefDatum: _briefDatum == null &&
+            widget.args.bericht!.briefDatum != null,
       );
       await BerichtPdfService.druckeBericht(
         bericht: aktuell,
@@ -243,6 +247,22 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
     BerichtUploadService.deleteAnhang(a.url);
   }
 
+  Future<void> _pickBriefDatum() async {
+    final initial = _briefDatum ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 730)),
+      helpText: 'Datum für den Brief',
+      cancelText: 'Abbrechen',
+      confirmText: 'Übernehmen',
+    );
+    if (picked != null) {
+      setState(() => _briefDatum = picked);
+    }
+  }
+
   Future<void> _pickPatient() async {
     final asyncPatienten = ref.read(patientenProvider);
     final patienten = asyncPatienten.value ?? const [];
@@ -309,6 +329,9 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
           kategorie: _kategorie,
           aktualisiertAm: DateTime.now(),
           anhaenge: _anhaenge,
+          briefDatum: _briefDatum,
+          clearBriefDatum: _briefDatum == null &&
+              widget.args.bericht!.briefDatum != null,
         );
         await svc.updateBericht(updated);
       } else {
@@ -326,6 +349,7 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
           inhalt: _aktuelleDeltaJson,
           inhaltText: _aktuellerPlaintext,
           anhaenge: _anhaenge,
+          briefDatum: _briefDatum,
         );
         await svc.addBericht(bericht);
       }
@@ -353,6 +377,7 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.slate100,
       appBar: AppHeader(
         title: _isEditing ? 'Bericht bearbeiten' : 'Neuer Bericht',
         icon: _isEditing
@@ -372,229 +397,676 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: Stack(
           children: [
-            // ── Vorlage / Kategorie ──
-            Text(
-              'Vorlage wählen',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppTheme.primaryColor,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: BerichtKategorie.values
-                  .map((k) => _VorlageChip(
-                        kategorie: k,
-                        selected: _kategorie == k,
-                        onTap: () => _applyVorlage(k),
-                      ))
-                  .toList(),
-            ),
-            const SizedBox(height: 20),
-
-            // ── Patient-Auswahl ──
-            if (_patient != null)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppTheme.primarySurface,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
+            // Hauptinhalt
+            ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+              children: [
+                // ── 1) Vorlage Auswahl ──
+                _SectionCard(
+                  icon: Icons.dashboard_customize_outlined,
+                  titel: 'Vorlage',
+                  subtitle:
+                      'Wählen Sie eine Vorlage — der Inhalt wird voreingestellt',
+                  child: _VorlageRow(
+                    aktiv: _kategorie,
+                    onSelect: _applyVorlage,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.person_outline,
-                        color: AppTheme.primaryColor),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
+                const SizedBox(height: 12),
+
+                // ── 2) Patient / Empfänger + Datum (zwei Spalten auf Wide) ──
+                LayoutBuilder(
+                  builder: (ctx, bc) {
+                    final twoCol = bc.maxWidth > 700;
+                    final patientCard = _SectionCard(
+                      icon: _kategorie == BerichtKategorie.brief
+                          ? Icons.mail_outline
+                          : Icons.person_outline,
+                      titel: _kategorie == BerichtKategorie.brief
+                          ? 'Empfänger'
+                          : 'Patient',
+                      subtitle: _kategorie == BerichtKategorie.brief
+                          ? 'Optional: Empfänger des Schreibens'
+                          : 'Optional: Bezug auf einen Patienten',
+                      child: _patient != null
+                          ? _PatientPill(
+                              name: _patient!.vollstaendigerName,
+                              onChange: _pickPatient,
+                              onRemove: _isEditing
+                                  ? null
+                                  : () => setState(() => _patient = null),
+                            )
+                          : _PatientEmptyButton(onTap: _pickPatient),
+                    );
+                    final datumCard = _SectionCard(
+                      icon: Icons.event_outlined,
+                      titel: 'Datum',
+                      subtitle:
+                          'Erscheint im Brief — leer = heute',
+                      child: _DatumPicker(
+                        date: _briefDatum,
+                        onPick: _pickBriefDatum,
+                        onClear: _briefDatum != null
+                            ? () => setState(() => _briefDatum = null)
+                            : null,
+                      ),
+                    );
+                    if (twoCol) {
+                      return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Bezogen auf Patient',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppTheme.slate600,
-                                fontWeight: FontWeight.w600,
-                              )),
-                          const SizedBox(height: 2),
-                          Text(
-                            _patient!.vollstaendigerName,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.slate900,
-                            ),
-                          ),
+                          Expanded(child: patientCard),
+                          const SizedBox(width: 12),
+                          SizedBox(width: 280, child: datumCard),
                         ],
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: _pickPatient,
-                      icon: const Icon(Icons.swap_horiz, size: 16),
-                      label: const Text('Ändern'),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
-                    if (!_isEditing)
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 18),
-                        onPressed: () => setState(() => _patient = null),
-                        tooltip: 'Patient entfernen',
-                      ),
-                  ],
+                      );
+                    }
+                    return Column(
+                      children: [
+                        patientCard,
+                        const SizedBox(height: 12),
+                        datumCard,
+                      ],
+                    );
+                  },
                 ),
-              )
-            else
-              OutlinedButton.icon(
-                onPressed: _pickPatient,
-                icon: const Icon(Icons.person_add_alt, size: 18),
-                label: const Text('Patient zuweisen (optional)'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 12),
-                  alignment: Alignment.centerLeft,
-                  minimumSize: const Size(double.infinity, 48),
-                ),
-              ),
-            const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
-            // ── Titel ──
-            TextFormField(
-              controller: _titelCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Titel / Betreff *',
-                prefixIcon: Icon(Icons.title_outlined),
-              ),
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.next,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return 'Bitte einen Titel eingeben';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // ── Inhalt (Rich Text Editor) ──
-            Text(
-              'Inhalt *',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppTheme.slate700,
-                  ),
-            ),
-            const SizedBox(height: 6),
-            BerichtRichEditor(
-              key: _editorReloadKey,
-              initialDelta: _initialInhalt,
-              onChanged: (delta, plain) {
-                _aktuelleDeltaJson = delta;
-                _aktuellerPlaintext = plain;
-              },
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Tipp: H1/H2 für Überschriften · ☐ für Checkbox-Listen · ★ für Aufzählung',
-              style: TextStyle(fontSize: 11, color: AppTheme.slate500),
-            ),
-            const SizedBox(height: 20),
-
-            // ── Anhaenge ──
-            Row(
-              children: [
-                Text(
-                  'Anhänge',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: AppTheme.primaryColor,
-                      ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '(${_anhaenge.length})',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.slate500,
-                    fontWeight: FontWeight.w600,
+                // ── 3) Inhalt — auf "A4-Kagit" ──
+                _SectionCard(
+                  icon: Icons.article_outlined,
+                  titel: 'Inhalt',
+                  subtitle:
+                      _kategorie == BerichtKategorie.brief
+                          ? 'Betrifft, Anrede, Inhalt, Schluss'
+                          : 'Titel + formattierter Bericht',
+                  padded: false,
+                  child: _PaperEditor(
+                    titelCtrl: _titelCtrl,
+                    editorReloadKey: _editorReloadKey,
+                    initialInhalt: _initialInhalt,
+                    onEditorChanged: (delta, plain) {
+                      _aktuelleDeltaJson = delta;
+                      _aktuellerPlaintext = plain;
+                    },
                   ),
                 ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: _uploadingAnhang ? null : _addAnhang,
-                  icon: _uploadingAnhang
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                const SizedBox(height: 12),
+
+                // ── 4) Anhaenge ──
+                _SectionCard(
+                  icon: Icons.attach_file,
+                  titel: 'Anhänge',
+                  subtitle:
+                      'PDF, Bilder (JPG/PNG/WebP/HEIC) — bis 25 MB pro Datei',
+                  trailing: TextButton.icon(
+                    onPressed: _uploadingAnhang ? null : _addAnhang,
+                    icon: _uploadingAnhang
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.add, size: 18),
+                    label: Text(_uploadingAnhang ? 'Lädt …' : 'Datei hinzufügen'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.primaryColor,
+                      backgroundColor:
+                          AppTheme.primaryColor.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  child: _anhaenge.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.cloud_upload_outlined,
+                                  size: 18, color: AppTheme.slate400),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Noch keine Anhänge',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppTheme.slate500,
+                                ),
+                              ),
+                            ],
+                          ),
                         )
-                      : const Icon(Icons.attach_file, size: 18),
-                  label: const Text('Datei anhängen'),
+                      : Column(
+                          children: _anhaenge
+                              .map((a) => _AnhangTile(
+                                    anhang: a,
+                                    onTap: () => _openAnhang(a),
+                                    onRemove: () => _removeAnhang(a),
+                                  ))
+                              .toList(),
+                        ),
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
+
+            // ── Sticky Save Bar ──
+            Positioned(
+              left: 0, right: 0, bottom: 0,
+              child: _StickySaveBar(
+                saving: _saving,
+                onSave: _save,
+                onPdf: _isEditing ? _printPdf : null,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Premium Section Card
+// ════════════════════════════════════════════════════════════════
+
+class _SectionCard extends StatelessWidget {
+  final IconData icon;
+  final String titel;
+  final String? subtitle;
+  final Widget? trailing;
+  final Widget child;
+  final bool padded;
+
+  const _SectionCard({
+    required this.icon,
+    required this.titel,
+    this.subtitle,
+    this.trailing,
+    required this.child,
+    this.padded = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.slate200, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.slate900.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header-Zeile
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+                padded ? 18 : 18, 14, padded ? 14 : 14, padded ? 6 : 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 32, height: 32,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primarySurface,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, size: 17, color: AppTheme.primaryColor),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        titel,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.slate900,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 1),
+                        Text(
+                          subtitle!,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.slate500,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (trailing != null) trailing!,
+              ],
+            ),
+          ),
+          if (padded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 4, 18, 16),
+              child: child,
+            )
+          else
+            child,
+        ],
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Vorlage Row — moderner als Wrap-Chips
+// ════════════════════════════════════════════════════════════════
+
+class _VorlageRow extends StatelessWidget {
+  final BerichtKategorie aktiv;
+  final ValueChanged<BerichtKategorie> onSelect;
+  const _VorlageRow({required this.aktiv, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: BerichtKategorie.values
+            .map((k) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _VorlageChipModern(
+                    kategorie: k,
+                    selected: aktiv == k,
+                    onTap: () => onSelect(k),
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _VorlageChipModern extends StatefulWidget {
+  final BerichtKategorie kategorie;
+  final bool selected;
+  final VoidCallback onTap;
+  const _VorlageChipModern({
+    required this.kategorie,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  State<_VorlageChipModern> createState() => _VorlageChipModernState();
+}
+
+class _VorlageChipModernState extends State<_VorlageChipModern> {
+  bool _hover = false;
+
+  IconData _iconFor(BerichtKategorie k) {
+    switch (k) {
+      case BerichtKategorie.verordnungsbericht:
+        return Icons.assignment_outlined;
+      case BerichtKategorie.brief:
+        return Icons.mail_outline;
+      case BerichtKategorie.verlaufsbericht:
+        return Icons.trending_up;
+      case BerichtKategorie.anamnese:
+        return Icons.history_edu_outlined;
+      case BerichtKategorie.telefonat:
+        return Icons.phone_in_talk_outlined;
+      case BerichtKategorie.uebergabe:
+        return Icons.change_circle_outlined;
+      case BerichtKategorie.allgemein:
+        return Icons.sticky_note_2_outlined;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = widget.selected;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppTheme.primaryColor
+              : (_hover ? AppTheme.primarySurface : Colors.white),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected
+                ? AppTheme.primaryColor
+                : (_hover
+                    ? AppTheme.primaryColor.withValues(alpha: 0.4)
+                    : AppTheme.slate300),
+            width: 1,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(_iconFor(widget.kategorie),
+                      size: 16,
+                      color: selected ? Colors.white : AppTheme.slate700),
+                  const SizedBox(width: 8),
+                  Text(
+                    widget.kategorie.label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: selected
+                          ? FontWeight.w700
+                          : FontWeight.w600,
+                      color: selected ? Colors.white : AppTheme.slate800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Patient Empty + Pill
+// ════════════════════════════════════════════════════════════════
+
+class _PatientEmptyButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _PatientEmptyButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppTheme.slate50,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppTheme.slate300, style: BorderStyle.solid),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.person_add_alt_1_outlined,
+                color: AppTheme.slate600, size: 18),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Person zuweisen',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.slate700,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right,
+                color: AppTheme.slate400, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PatientPill extends StatelessWidget {
+  final String name;
+  final VoidCallback onChange;
+  final VoidCallback? onRemove;
+  const _PatientPill(
+      {required this.name, required this.onChange, this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.primarySurface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AppTheme.primaryColor.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 14,
+            backgroundColor: AppTheme.primaryColor,
+            child: const Icon(Icons.person, size: 16, color: Colors.white),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              name,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.slate900,
+              ),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: onChange,
+            icon: const Icon(Icons.swap_horiz, size: 14),
+            label: const Text('Ändern'),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+          if (onRemove != null)
+            IconButton(
+              icon: const Icon(Icons.close, size: 16),
+              onPressed: onRemove,
+              tooltip: 'Entfernen',
+              style: IconButton.styleFrom(
+                padding: const EdgeInsets.all(4),
+                minimumSize: const Size(28, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Paper Editor — A4-aehnlicher weisser Bereich
+// ════════════════════════════════════════════════════════════════
+
+class _PaperEditor extends StatelessWidget {
+  final TextEditingController titelCtrl;
+  final Key editorReloadKey;
+  final String initialInhalt;
+  final void Function(String, String) onEditorChanged;
+
+  const _PaperEditor({
+    required this.titelCtrl,
+    required this.editorReloadKey,
+    required this.initialInhalt,
+    required this.onEditorChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        color: AppTheme.slate50,
+        border: Border(
+          top: BorderSide(color: AppTheme.slate200),
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(13),
+          bottomRight: Radius.circular(13),
+        ),
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.slate900.withValues(alpha: 0.10),
+                  blurRadius: 18,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            if (_anhaenge.isEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 14),
-                decoration: BoxDecoration(
-                  color: AppTheme.slate50,
-                  border: Border.all(color: AppTheme.slate200),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.attach_file_outlined,
-                        size: 16, color: AppTheme.slate400),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Keine Anhänge — PDF, Bilder (JPG/PNG) bis 25 MB möglich',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.slate500,
-                        ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Titel als großer Betreff
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 24, 28, 8),
+                  child: TextFormField(
+                    controller: titelCtrl,
+                    decoration: const InputDecoration(
+                      hintText: 'Titel / Betreff',
+                      hintStyle: TextStyle(
+                        color: AppTheme.slate400,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
                       ),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      filled: false,
                     ),
-                  ],
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.slate900,
+                      letterSpacing: -0.4,
+                    ),
+                    textCapitalization: TextCapitalization.sentences,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'Bitte einen Titel eingeben';
+                      }
+                      return null;
+                    },
+                  ),
                 ),
-              ),
-            ..._anhaenge.map((a) => _AnhangTile(
-                  anhang: a,
-                  onTap: () => _openAnhang(a),
-                  onRemove: () => _removeAnhang(a),
-                )),
-            const SizedBox(height: 24),
+                const Divider(height: 1, color: AppTheme.slate200),
+                // Editor mit eigener Toolbar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                  child: BerichtRichEditor(
+                    key: editorReloadKey,
+                    initialDelta: initialInhalt,
+                    onChanged: onEditorChanged,
+                    minHeight: 480,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-            // ── Speichern ──
-            SizedBox(
-              height: 50,
-              child: FilledButton.icon(
-                onPressed: _saving ? null : _save,
-                icon: _saving
+// ════════════════════════════════════════════════════════════════
+// Sticky Save Bar
+// ════════════════════════════════════════════════════════════════
+
+class _StickySaveBar extends StatelessWidget {
+  final bool saving;
+  final VoidCallback onSave;
+  final VoidCallback? onPdf;
+
+  const _StickySaveBar({
+    required this.saving,
+    required this.onSave,
+    this.onPdf,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(top: BorderSide(color: AppTheme.slate200)),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.slate900.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+          child: Row(
+            children: [
+              if (onPdf != null) ...[
+                OutlinedButton.icon(
+                  onPressed: onPdf,
+                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                  label: const Text('PDF Vorschau'),
+                ),
+                const SizedBox(width: 10),
+              ],
+              const Spacer(),
+              FilledButton.icon(
+                onPressed: saving ? null : onSave,
+                icon: saving
                     ? const SizedBox(
-                        width: 20,
-                        height: 20,
+                        width: 18, height: 18,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+                          strokeWidth: 2, color: Colors.white,
                         ),
                       )
-                    : const Icon(Icons.save_outlined),
-                label: Text(_saving ? 'Speichert …' : 'Bericht speichern'),
+                    : const Icon(Icons.save_outlined, size: 18),
+                label: Text(saving ? 'Speichert …' : 'Bericht speichern'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 22, vertical: 14),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -615,6 +1087,8 @@ class _VorlageChip extends StatelessWidget {
 
   IconData _iconFor(BerichtKategorie k) {
     switch (k) {
+      case BerichtKategorie.verordnungsbericht:
+        return Icons.assignment_outlined;
       case BerichtKategorie.brief:
         return Icons.mail_outline;
       case BerichtKategorie.verlaufsbericht:
@@ -909,6 +1383,95 @@ class _PatientPickerSheetState extends State<_PatientPickerSheet> {
                       },
                     ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Date picker tile — kompakte Anzeige mit Tap zum Aendern.
+class _DatumPicker extends StatelessWidget {
+  final DateTime? date;
+  final VoidCallback onPick;
+  final VoidCallback? onClear;
+  const _DatumPicker({required this.date, required this.onPick, this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    final fmt = DateFormat('EEEE, dd.MM.yyyy');
+    final hasDate = date != null;
+    return InkWell(
+      onTap: onPick,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: hasDate ? AppTheme.primarySurface : AppTheme.slate50,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: hasDate
+                ? AppTheme.primaryColor.withValues(alpha: 0.4)
+                : AppTheme.slate300,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.calendar_month_outlined,
+              size: 20,
+              color: hasDate ? AppTheme.primaryColor : AppTheme.slate600,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (hasDate) ...[
+                    Text(
+                      DateFormat('dd.MM.yyyy').format(date!),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.slate900,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    Text(
+                      fmt.format(date!),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.slate600,
+                      ),
+                    ),
+                  ] else ...[
+                    const Text(
+                      'Heute',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.slate700,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Text(
+                      'Zum Auswählen tippen',
+                      style: TextStyle(fontSize: 11, color: AppTheme.slate500),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (onClear != null)
+              IconButton(
+                icon: const Icon(Icons.close, size: 16),
+                onPressed: onClear,
+                tooltip: 'Auf Heute zurücksetzen',
+                style: IconButton.styleFrom(
+                  padding: const EdgeInsets.all(4),
+                  minimumSize: const Size(28, 28),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
           ],
         ),
       ),

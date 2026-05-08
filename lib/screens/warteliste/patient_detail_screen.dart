@@ -1527,18 +1527,75 @@ class _BerichteSection extends ConsumerWidget {
     return _SectionCard(
       title: 'Berichte',
       icon: Icons.menu_book_outlined,
-      action: TextButton.icon(
-        onPressed: () => Navigator.of(context).pushNamed(
-          '/bericht/neu',
-          arguments: BerichtFormArgs(patient: patient),
+      action: PopupMenuButton<String>(
+        onSelected: (value) {
+          switch (value) {
+            case 'verordnungsbericht':
+              Navigator.of(context).pushNamed(
+                '/verordnungsbericht/neu',
+                arguments: patient,
+              );
+              break;
+            case 'bericht':
+              Navigator.of(context).pushNamed(
+                '/bericht/neu',
+                arguments: BerichtFormArgs(patient: patient),
+              );
+              break;
+          }
+        },
+        position: PopupMenuPosition.under,
+        icon: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(Icons.add, size: 16, color: AppTheme.primaryColor),
+              SizedBox(width: 4),
+              Text(
+                'Neu',
+                style: TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              SizedBox(width: 2),
+              Icon(Icons.arrow_drop_down,
+                  size: 18, color: AppTheme.primaryColor),
+            ],
+          ),
         ),
-        icon: const Icon(Icons.add, size: 18),
-        label: const Text('Neuer Bericht'),
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          minimumSize: Size.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
+        itemBuilder: (ctx) => [
+          PopupMenuItem(
+            value: 'verordnungsbericht',
+            child: Row(
+              children: const [
+                Icon(Icons.assignment_outlined,
+                    color: Color(0xFF1A3FA0), size: 18),
+                SizedBox(width: 10),
+                Text('Verordnungs-Bericht'),
+              ],
+            ),
+          ),
+          const PopupMenuDivider(),
+          PopupMenuItem(
+            value: 'bericht',
+            child: Row(
+              children: const [
+                Icon(Icons.note_add_outlined,
+                    color: AppTheme.successColor, size: 18),
+                SizedBox(width: 10),
+                Text('Notiz / Verlauf / Brief …'),
+              ],
+            ),
+          ),
+        ],
       ),
       children: [
         asyncBerichte.when(
@@ -1583,6 +1640,8 @@ class _BerichtTile extends StatelessWidget {
 
   Color _color() {
     switch (bericht.kategorie) {
+      case BerichtKategorie.verordnungsbericht:
+        return const Color(0xFF1A3FA0);
       case BerichtKategorie.brief:
         return const Color(0xFF1A3FA0);
       case BerichtKategorie.verlaufsbericht:
@@ -1598,14 +1657,25 @@ class _BerichtTile extends StatelessWidget {
     }
   }
 
+  void _open(BuildContext context) {
+    if (bericht.kategorie == BerichtKategorie.verordnungsbericht) {
+      Navigator.of(context).pushNamed(
+        '/verordnungsbericht/bearbeiten',
+        arguments: bericht,
+      );
+    } else {
+      Navigator.of(context).pushNamed(
+        '/bericht/bearbeiten',
+        arguments: BerichtFormArgs(bericht: bericht),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = _color();
     return InkWell(
-      onTap: () => Navigator.of(context).pushNamed(
-        '/bericht/bearbeiten',
-        arguments: BerichtFormArgs(bericht: bericht),
-      ),
+      onTap: () => _open(context),
       child: Container(
         decoration: BoxDecoration(
           border: Border(

@@ -1,7 +1,7 @@
 name: warteliste_pro
 description: "WarteListe Pro - Wartelisten-Management für Logopädie-Praxen"
 publish_to: 'none'
-version: 1.5.7+34
+version: 1.5.10+39
 
 environment:
   sdk: ^3.7.2
@@ -45,3 +45,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/praxis_logos/
+    - assets/vordrucke/
+    - assets/vordrucke/menauer/

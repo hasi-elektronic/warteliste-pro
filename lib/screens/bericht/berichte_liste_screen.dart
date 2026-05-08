@@ -41,10 +41,19 @@ class _BerichteListeScreenState extends ConsumerState<BerichteListeScreen> {
   Widget build(BuildContext context) {
     final asyncBerichte = ref.watch(berichteProvider);
     return Scaffold(
-      appBar: const AppHeader(
+      appBar: AppHeader(
         title: 'Berichte',
         icon: Icons.menu_book_outlined,
         showBackButton: true,
+        actions: [
+          HeaderIconAction(
+            icon: Icons.folder_special_outlined,
+            tooltip: 'Vordrucke',
+            onTap: () =>
+                Navigator.of(context).pushNamed('/vordrucke'),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openForm(context),
@@ -176,6 +185,8 @@ class _BerichteListeScreenState extends ConsumerState<BerichteListeScreen> {
 
   static IconData _iconFor(BerichtKategorie k) {
     switch (k) {
+      case BerichtKategorie.verordnungsbericht:
+        return Icons.assignment_outlined;
       case BerichtKategorie.brief:
         return Icons.mail_outline;
       case BerichtKategorie.verlaufsbericht:
@@ -336,6 +347,8 @@ class _BerichtCard extends ConsumerWidget {
 
   Color _colorFor(BerichtKategorie k) {
     switch (k) {
+      case BerichtKategorie.verordnungsbericht:
+        return const Color(0xFF1A3FA0);
       case BerichtKategorie.brief:
         return const Color(0xFF1A3FA0); // Menauer-Blau
       case BerichtKategorie.verlaufsbericht:
@@ -521,10 +534,18 @@ class _BerichtDetailSheet extends ConsumerWidget {
                   child: FilledButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
-                      Navigator.of(context).pushNamed(
-                        '/bericht/bearbeiten',
-                        arguments: BerichtFormArgs(bericht: bericht),
-                      );
+                      if (bericht.kategorie ==
+                          BerichtKategorie.verordnungsbericht) {
+                        Navigator.of(context).pushNamed(
+                          '/verordnungsbericht/bearbeiten',
+                          arguments: bericht,
+                        );
+                      } else {
+                        Navigator.of(context).pushNamed(
+                          '/bericht/bearbeiten',
+                          arguments: BerichtFormArgs(bericht: bericht),
+                        );
+                      }
                     },
                     icon: const Icon(Icons.edit_outlined),
                     label: const Text('Bearbeiten'),

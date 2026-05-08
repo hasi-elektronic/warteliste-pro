@@ -24,9 +24,9 @@ class BerichtPdfService {
   // ── Konstanten (Maße in pt) ───────────────────────────────────
   static const double _kSidebarWidth = 100;
   static const double _kSidebarRight = 22;
-  static const double _kPageMarginLeft = 32;
+  static const double _kPageMarginLeft = 36;
   static const double _kPageMarginRight = 28 + _kSidebarWidth; // Platz fuer Sidebar
-  static const double _kPageMarginTop = 100; // Platz fuer Logo + Adresszeile
+  static const double _kPageMarginTop = 110; // Platz nur fuer Logo
   static const double _kPageMarginBottom = 30;
 
   static final PdfColor _kAccentBlau = PdfColor.fromInt(0xFF1A3FA0);
@@ -83,8 +83,26 @@ class BerichtPdfService {
         ),
         footer: (ctx) => _buildSeitenzahl(ctx),
         build: (ctx) => [
-          // ── Empfänger (links) + Datum (rechts) ────────────────
-          pw.SizedBox(height: 4),
+          // ── 1) Praxis-Adresszeile (klein, blau) ──────────────
+          pw.Text(
+            briefpapier.praxisName,
+            style: pw.TextStyle(
+              fontSize: 10,
+              color: _kAccentBlau,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          if (briefpapier.standortAdresse.isNotEmpty)
+            pw.Text(
+              briefpapier.standortAdresse,
+              style: pw.TextStyle(
+                fontSize: 9,
+                color: _kAccentBlau,
+              ),
+            ),
+          pw.SizedBox(height: 26),
+
+          // ── 2) Empfänger (links) + Datum (rechts) ────────────
           pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
@@ -105,7 +123,8 @@ class BerichtPdfService {
                         ),
                       ),
                       pw.TextSpan(
-                        text: fmtDate.format(DateTime.now()),
+                        text: fmtDate.format(
+                            bericht.briefDatum ?? DateTime.now()),
                         style: pw.TextStyle(
                           fontSize: 10,
                           color: PdfColors.grey900,
@@ -118,9 +137,9 @@ class BerichtPdfService {
               ),
             ],
           ),
-          pw.SizedBox(height: 32),
+          pw.SizedBox(height: 28),
 
-          // ── Kategorie-Tag (nur fuer Nicht-Briefe — kompakt) ───
+          // ── 3) Kategorie-Tag (nur Nicht-Brief) ───────────────
           if (!isBrief) ...[
             pw.Container(
               padding:
@@ -143,49 +162,55 @@ class BerichtPdfService {
             pw.SizedBox(height: 8),
           ],
 
-          // ── Betrifft ──────────────────────────────────────────
+          // ── 4) Betrifft / Titel ──────────────────────────────
           if (bericht.titel.isNotEmpty) ...[
-            pw.Text(
-              isBrief ? 'Betrifft' : bericht.titel,
-              style: pw.TextStyle(
-                fontSize: isBrief ? 12 : 18,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.grey900,
-              ),
-            ),
-            if (isBrief)
-              pw.Padding(
-                padding: const pw.EdgeInsets.only(top: 4),
-                child: pw.Text(
-                  bericht.titel,
-                  style: const pw.TextStyle(
-                    fontSize: 11,
-                    color: PdfColors.grey900,
-                  ),
+            if (isBrief) ...[
+              pw.Text(
+                'Betrifft',
+                style: pw.TextStyle(
+                  fontSize: 11,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.grey900,
                 ),
               ),
-            pw.SizedBox(height: isBrief ? 24 : 8),
-          ],
-
-          // ── Meta-Zeile (nur Nicht-Brief) ──────────────────────
-          if (!isBrief) ...[
-            pw.Text(
-              'Verfasst von ${bericht.authorName ?? bericht.authorEmail} · '
-              '${DateFormat('dd.MM.yyyy · HH:mm').format(bericht.erstelltAm)}',
-              style: const pw.TextStyle(
-                fontSize: 9,
-                color: PdfColors.grey600,
+              pw.SizedBox(height: 4),
+              pw.Text(
+                bericht.titel,
+                style: pw.TextStyle(
+                  fontSize: 11,
+                  color: PdfColors.grey900,
+                  fontWeight: pw.FontWeight.bold,
+                ),
               ),
-            ),
-            pw.SizedBox(height: 12),
-            pw.Container(height: 0.4, color: PdfColors.grey300),
-            pw.SizedBox(height: 12),
+              pw.SizedBox(height: 22),
+            ] else ...[
+              pw.Text(
+                bericht.titel,
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.grey900,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                'Verfasst von ${bericht.authorName ?? bericht.authorEmail} · '
+                '${DateFormat('dd.MM.yyyy · HH:mm').format(bericht.erstelltAm)}',
+                style: const pw.TextStyle(
+                  fontSize: 9,
+                  color: PdfColors.grey600,
+                ),
+              ),
+              pw.SizedBox(height: 12),
+              pw.Container(height: 0.4, color: PdfColors.grey300),
+              pw.SizedBox(height: 12),
+            ],
           ],
 
-          // ── Inhalt (Quill Delta) ──────────────────────────────
+          // ── 5) Inhalt (Quill Delta) ──────────────────────────
           ..._renderQuillContent(bericht.inhalt, bericht.inhaltText),
 
-          // ── Anhänge ───────────────────────────────────────────
+          // ── 6) Anhänge ───────────────────────────────────────
           if (bericht.anhaenge.isNotEmpty) ...[
             pw.SizedBox(height: 14),
             pw.Container(
@@ -219,16 +244,19 @@ class BerichtPdfService {
             ),
           ],
 
-          // ── Schluss ───────────────────────────────────────────
-          pw.SizedBox(height: 36),
-          pw.Text(
-            'Mit freundlichen Grüßen',
-            style: const pw.TextStyle(
-              fontSize: 11,
-              color: PdfColors.grey900,
+          // ── 7) Schluss (nur wenn Quill nicht selbst 'Mit freundlichen
+          //     Grüßen' enthaelt — vermeidet Doppelung) ────────
+          if (!_inhaltEnthaeltSchluss(bericht.inhaltText)) ...[
+            pw.SizedBox(height: 28),
+            pw.Text(
+              'Mit freundlichen Grüßen',
+              style: const pw.TextStyle(
+                fontSize: 11,
+                color: PdfColors.grey900,
+              ),
             ),
-          ),
-          pw.SizedBox(height: 40),
+          ],
+          pw.SizedBox(height: 36),
           pw.Container(
             width: 180,
             child: pw.Column(
@@ -253,68 +281,44 @@ class BerichtPdfService {
     return doc.save();
   }
 
-  // ── Background: Logo (oben rechts) + Praxis-Adresszeile (oben
-  //   links) + Sidebar (rechts) — wird auf jede Seite gezeichnet.
+  // ── Background: Logo + Sidebar als EIN Block ganz rechts.
+  //   Logo zentriert oben, dann die Footer-Blöcke darunter.
   static pw.Widget _buildPageBackground(
       PraxisBriefpapier b, pw.Widget? logoWidget) {
-    return pw.Stack(
-      children: [
-        // ── Logo oben rechts ──
-        if (logoWidget != null)
+    return pw.FullPage(
+      ignoreMargins: true,
+      child: pw.Stack(
+        children: [
           pw.Positioned(
-            top: 18,
-            right: 22,
-            child: logoWidget,
+            top: 22,
+            right: _kSidebarRight,
+            bottom: _kPageMarginBottom + 14,
+            child: pw.SizedBox(
+              width: _kSidebarWidth - 4,
+              child: _buildSidebar(b, logoWidget),
+            ),
           ),
-
-        // ── Praxis-Adresszeile oben links ──
-        pw.Positioned(
-          top: 32,
-          left: _kPageMarginLeft,
-          right: _kSidebarWidth + 40,
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(
-                b.praxisName,
-                style: pw.TextStyle(
-                  fontSize: 10,
-                  color: _kAccentBlau,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              if (b.standortAdresse.isNotEmpty)
-                pw.Text(
-                  b.standortAdresse,
-                  style: pw.TextStyle(
-                    fontSize: 9,
-                    color: _kAccentBlau,
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        // ── Sidebar rechts (auf jeder Seite) ──
-        pw.Positioned(
-          top: 28,
-          right: _kSidebarRight,
-          bottom: _kPageMarginBottom + 14,
-          child: pw.SizedBox(
-            width: _kSidebarWidth - 4,
-            child: _buildSidebar(b),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  static pw.Widget _buildSidebar(PraxisBriefpapier b) {
-    if (b.footerBloecke.isEmpty) return pw.SizedBox();
-
+  static pw.Widget _buildSidebar(
+      PraxisBriefpapier b, pw.Widget? logoWidget) {
     final children = <pw.Widget>[];
-    // Padding oben damit Logo & Adresszeile drueber Platz haben
-    children.add(pw.SizedBox(height: 102));
+
+    // ── Logo zentriert oben in der Sidebar ──
+    if (logoWidget != null) {
+      children.add(pw.Center(child: logoWidget));
+      children.add(pw.SizedBox(height: 16));
+    }
+
+    if (b.footerBloecke.isEmpty) {
+      return pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: children,
+      );
+    }
 
     for (var i = 0; i < b.footerBloecke.length; i++) {
       final block = b.footerBloecke[i];
@@ -547,8 +551,20 @@ class BerichtPdfService {
         : widgets;
   }
 
+  /// Erkennt ob der Plaintext-Inhalt schon einen Brief-Schluss enthaelt,
+  /// damit das PDF kein zweites 'Mit freundlichen Grüßen' anhaengt.
+  static bool _inhaltEnthaeltSchluss(String text) {
+    final lower = text.toLowerCase();
+    return lower.contains('mit freundlichen gr') ||
+        lower.contains('mfg') ||
+        lower.contains('herzliche grüße') ||
+        lower.contains('hochachtungsvoll');
+  }
+
   static PdfColor _pdfColorFor(BerichtKategorie k) {
     switch (k) {
+      case BerichtKategorie.verordnungsbericht:
+        return _kAccentBlau;
       case BerichtKategorie.brief:
         return _kAccentBlau;
       case BerichtKategorie.verlaufsbericht:

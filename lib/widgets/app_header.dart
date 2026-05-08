@@ -56,10 +56,11 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                   else if (leading != null)
                     leading!,
 
-                  // Brand-Block: Logo + WarteListe Pro
+                  // Brand-Block: Logo + WarteListe Pro → zurueck zum Dashboard
                   _BrandBlock(
                     onTap: () {
-                      // optional: navigate to root
+                      Navigator.of(context)
+                          .popUntil((route) => route.isFirst);
                     },
                   ),
 

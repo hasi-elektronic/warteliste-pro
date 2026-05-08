@@ -370,6 +370,7 @@ class _FilterChipsRow extends ConsumerWidget {
     final stoerungsbildFilter = ref.watch(stoerungsbildFilterProvider);
     final versicherungFilter = ref.watch(versicherungFilterProvider);
     final monatFilter = ref.watch(monatFilterProvider);
+    final jahrFilter = ref.watch(jahrFilterProvider);
     final nurHausbesuch = ref.watch(nurHausbesuchProvider);
     final therapeutFilter = ref.watch(therapeutFilterProvider);
     final therapeuten = ref.watch(therapeutenProvider).valueOrNull ?? const [];
@@ -377,6 +378,7 @@ class _FilterChipsRow extends ConsumerWidget {
     final hasActiveFilter = stoerungsbildFilter != null ||
         versicherungFilter != null ||
         monatFilter != null ||
+        jahrFilter != null ||
         nurHausbesuch ||
         therapeutFilter != null;
 
@@ -443,6 +445,16 @@ class _FilterChipsRow extends ConsumerWidget {
             isActive: monatFilter != null,
             onTap: () => _showMonatPicker(context, ref),
           ),
+          const SizedBox(width: 8),
+
+          // Jahr-Filter
+          _buildFilterChip(
+            context: context,
+            label: jahrFilter ?? 'Jahr',
+            icon: Icons.calendar_today_outlined,
+            isActive: jahrFilter != null,
+            onTap: () => _showJahrPicker(context, ref),
+          ),
 
           // Alle Filter zuruecksetzen
           if (hasActiveFilter) ...[
@@ -454,6 +466,7 @@ class _FilterChipsRow extends ConsumerWidget {
                 ref.read(stoerungsbildFilterProvider.notifier).state = null;
                 ref.read(versicherungFilterProvider.notifier).state = null;
                 ref.read(monatFilterProvider.notifier).state = null;
+                ref.read(jahrFilterProvider.notifier).state = null;
                 ref.read(nurHausbesuchProvider.notifier).state = false;
                 ref.read(therapeutFilterProvider.notifier).state = null;
               },
@@ -583,6 +596,29 @@ class _FilterChipsRow extends ConsumerWidget {
         },
         onClear: () {
           ref.read(versicherungFilterProvider.notifier).state = null;
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  void _showJahrPicker(BuildContext context, WidgetRef ref) {
+    final now = DateTime.now();
+    // Letzte 6 Jahre (inkl. aktuelles Jahr)
+    final jahre = List.generate(6, (i) => (now.year - i).toString());
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => _BottomSheetList(
+        title: 'Jahr waehlen',
+        items: jahre,
+        selectedItem: ref.read(jahrFilterProvider),
+        onSelected: (value) {
+          ref.read(jahrFilterProvider.notifier).state = value;
+          Navigator.pop(context);
+        },
+        onClear: () {
+          ref.read(jahrFilterProvider.notifier).state = null;
           Navigator.pop(context);
         },
       ),

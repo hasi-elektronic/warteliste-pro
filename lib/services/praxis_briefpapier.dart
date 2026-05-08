@@ -42,9 +42,18 @@ class PraxisBriefpapierService {
     if (name.contains('menauer') || adresse.contains('menauer')) {
       Uint8List? logo;
       try {
-        final data = await rootBundle.load('assets/praxis_logos/menauer.jpg');
+        // PNG bevorzugt — pdf-Paket hat manchmal Probleme mit bestimmten
+        // JPEG-Codes ('Offset is outside the bounds of the DataView')
+        final data =
+            await rootBundle.load('assets/praxis_logos/menauer.png');
         logo = data.buffer.asUint8List();
-      } catch (_) {/* fallback ohne Logo */}
+      } catch (_) {
+        try {
+          final data =
+              await rootBundle.load('assets/praxis_logos/menauer.jpg');
+          logo = data.buffer.asUint8List();
+        } catch (_) {/* fallback ohne Logo */}
+      }
 
       // Standort-spezifische Adresse + Telefon
       String standortAdresse;
