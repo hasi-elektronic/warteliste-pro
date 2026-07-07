@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -1063,82 +1062,6 @@ class _StickySaveBar extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 22, vertical: 14),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Chip zum Auswaehlen einer Vorlage.
-class _VorlageChip extends StatelessWidget {
-  final BerichtKategorie kategorie;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _VorlageChip({
-    required this.kategorie,
-    required this.selected,
-    required this.onTap,
-  });
-
-  IconData _iconFor(BerichtKategorie k) {
-    switch (k) {
-      case BerichtKategorie.verordnungsbericht:
-        return Icons.assignment_outlined;
-      case BerichtKategorie.brief:
-        return Icons.mail_outline;
-      case BerichtKategorie.verlaufsbericht:
-        return Icons.trending_up;
-      case BerichtKategorie.anamnese:
-        return Icons.history_edu_outlined;
-      case BerichtKategorie.telefonat:
-        return Icons.phone_in_talk_outlined;
-      case BerichtKategorie.uebergabe:
-        return Icons.change_circle_outlined;
-      case BerichtKategorie.allgemein:
-        return Icons.sticky_note_2_outlined;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppTheme.primaryColor : Colors.white,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 140),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: selected
-                  ? AppTheme.primaryColor
-                  : AppTheme.slate300,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(_iconFor(kategorie),
-                  size: 18,
-                  color: selected ? Colors.white : AppTheme.slate700),
-              const SizedBox(width: 8),
-              Text(
-                kategorie.label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight:
-                      selected ? FontWeight.w700 : FontWeight.w600,
-                  color: selected ? Colors.white : AppTheme.slate800,
                 ),
               ),
             ],

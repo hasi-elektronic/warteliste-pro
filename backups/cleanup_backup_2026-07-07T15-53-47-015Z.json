@@ -1,0 +1,1066 @@
+{
+  "praxen": [
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/0IQUq5x2DcUkJ1isnRVX",
+      "fields": {
+        "adresse": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Meine Praxis"
+        },
+        "createdBy": {
+          "stringValue": "tnyBDuM3abQ5T5JfC78tSIueCbt1"
+        },
+        "telefon": {
+          "stringValue": ""
+        },
+        "email": {
+          "stringValue": "aynur.aktag@outlook.de"
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-16T10:33:07.206Z"
+        },
+        "inhaber": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-06-16T10:33:07.242771Z",
+      "updateTime": "2026-06-16T10:33:07.242771Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/0hBgx6wJVRpaXhLejL5v",
+      "fields": {
+        "createdBy": {
+          "stringValue": "fdCSVilfzZb5cQyc8PBjbu07mzO2"
+        },
+        "name": {
+          "stringValue": "Logopaedie Menauer - Weil der Stadt"
+        },
+        "adresse": {
+          "stringValue": ""
+        },
+        "telefon": {
+          "stringValue": ""
+        },
+        "inhaber": {
+          "stringValue": ""
+        },
+        "email": {
+          "stringValue": "milli.roehrborn@ymail.com"
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-17T11:16:45.440Z"
+        }
+      },
+      "createTime": "2026-06-17T11:16:44.993253Z",
+      "updateTime": "2026-06-17T11:16:44.993253Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/2ue1U8Pf5AV3KgHluVBd",
+      "fields": {
+        "inhaber": {
+          "stringValue": ""
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-12T17:43:40.978026Z"
+        },
+        "email": {
+          "stringValue": "enes.sivrikaya61@web.de"
+        },
+        "telefon": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Enes"
+        },
+        "createdBy": {
+          "stringValue": "dznFqHF1ZrOkCHaQP8KBZ9aFmuA2"
+        },
+        "adresse": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-06-12T17:43:41.454071Z",
+      "updateTime": "2026-06-12T17:43:41.454071Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/5uB5BEG8QbWjYdeEmKno",
+      "fields": {
+        "inhaber": {
+          "stringValue": ""
+        },
+        "email": {
+          "stringValue": "Zottilaura@web.de"
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-16T08:55:48.296Z"
+        },
+        "telefon": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Logopädie Menauer"
+        },
+        "createdBy": {
+          "stringValue": "2EGdj1VarSTUoPTFXAI7XMzLOcm1"
+        },
+        "adresse": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-06-16T08:55:48.398801Z",
+      "updateTime": "2026-06-16T08:55:48.398801Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/AlAfUP4rTzZXNEUEMXxv",
+      "fields": {
+        "adresse": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Meine Praxis"
+        },
+        "createdBy": {
+          "stringValue": "2EGdj1VarSTUoPTFXAI7XMzLOcm1"
+        },
+        "telefon": {
+          "stringValue": ""
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-16T08:56:23.735Z"
+        },
+        "email": {
+          "stringValue": "zottilaura@web.de"
+        },
+        "inhaber": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-06-16T08:56:23.828433Z",
+      "updateTime": "2026-06-16T08:56:23.828433Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/LtucQpxkWnnxDnCC8t5n",
+      "fields": {
+        "createdAt": {
+          "timestampValue": "2026-06-16T10:32:30.578Z"
+        },
+        "email": {
+          "stringValue": "Aynur.Aktag@outlook.de"
+        },
+        "inhaber": {
+          "stringValue": ""
+        },
+        "telefon": {
+          "stringValue": ""
+        },
+        "adresse": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Logopädie Praxis Susanne Menauer"
+        },
+        "createdBy": {
+          "stringValue": "tnyBDuM3abQ5T5JfC78tSIueCbt1"
+        }
+      },
+      "createTime": "2026-06-16T10:32:30.757488Z",
+      "updateTime": "2026-06-16T10:32:30.757488Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/NjbKmNjLjj8zASsfKJJt",
+      "fields": {
+        "createdAt": {
+          "timestampValue": "2026-04-15T07:14:38.686Z"
+        },
+        "email": {
+          "stringValue": "lerntherapie@logo-menauer.de"
+        },
+        "inhaber": {
+          "stringValue": "Susanne Menauer"
+        },
+        "telefon": {
+          "stringValue": "07033137724"
+        },
+        "adresse": {
+          "stringValue": "Stuttgarter Str. 52\n71263 Weil der Stadt"
+        },
+        "createdBy": {
+          "stringValue": "MEHzv81VZUQVXNFSVgavfnuJtNS2"
+        },
+        "name": {
+          "stringValue": "Lerntherapie Menauer"
+        }
+      },
+      "createTime": "2026-04-15T07:14:38.755147Z",
+      "updateTime": "2026-06-10T15:58:04.891525Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/RjZMqW1glJuko4ijBxjS",
+      "fields": {
+        "inhaber": {
+          "stringValue": ""
+        },
+        "createdAt": {
+          "timestampValue": "2026-04-15T15:18:11.960731Z"
+        },
+        "email": {
+          "stringValue": "ethaneast2022@gmail.com"
+        },
+        "telefon": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "ABC Test"
+        },
+        "adresse": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-04-15T15:18:12.178341Z",
+      "updateTime": "2026-04-15T15:18:12.178341Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/T81MO6vuMUW8nELUhvEL",
+      "fields": {
+        "name": {
+          "stringValue": "Logopädie Susanne Menauer"
+        },
+        "createdBy": {
+          "stringValue": "VIAAvQeQh4NySIjciVyHaNyQJEI2"
+        },
+        "adresse": {
+          "stringValue": ""
+        },
+        "telefon": {
+          "stringValue": ""
+        },
+        "inhaber": {
+          "stringValue": ""
+        },
+        "email": {
+          "stringValue": "Michelle.schmidgall@gmail.com"
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-16T09:04:00.914Z"
+        }
+      },
+      "createTime": "2026-06-16T09:04:01.375230Z",
+      "updateTime": "2026-06-16T09:04:01.375230Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/TXGuqqTQvjyTRvvnO0py",
+      "fields": {
+        "telefon": {
+          "stringValue": ""
+        },
+        "adresse": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Meine Praxis"
+        },
+        "createdBy": {
+          "stringValue": "2EGdj1VarSTUoPTFXAI7XMzLOcm1"
+        },
+        "email": {
+          "stringValue": "zottilaura@web.de"
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-16T08:56:23.738Z"
+        },
+        "inhaber": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-06-16T08:56:23.877148Z",
+      "updateTime": "2026-06-16T08:56:23.877148Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/UMVrBwWaWQO7DXRcunxL",
+      "fields": {
+        "telefon": {
+          "stringValue": "07156/1773574"
+        },
+        "adresse": {
+          "stringValue": "Marktstr. 6/1, 71254 Ditzingen"
+        },
+        "name": {
+          "stringValue": "Logopaedie Menauer - Ditzingen"
+        },
+        "createdBy": {
+          "stringValue": "MEHzv81VZUQVXNFSVgavfnuJtNS2"
+        },
+        "createdAt": {
+          "timestampValue": "2026-04-14T10:33:04.324Z"
+        },
+        "email": {
+          "stringValue": "praxisditz@logo-menauer.de"
+        },
+        "inhaber": {
+          "stringValue": "Susanne Menauer"
+        }
+      },
+      "createTime": "2026-04-14T10:33:04.456778Z",
+      "updateTime": "2026-06-10T11:35:01.587724Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/fOP4sWtIPg17GdTKZCwi",
+      "fields": {
+        "createdAt": {
+          "timestampValue": "2026-04-10T11:05:52.320180Z"
+        },
+        "email": {
+          "stringValue": "hamdi@guencavdi.net"
+        },
+        "inhaber": {
+          "stringValue": ""
+        },
+        "telefon": {
+          "stringValue": ""
+        },
+        "adresse": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Weil Der Stadt"
+        }
+      },
+      "createTime": "2026-04-10T11:05:53.548467Z",
+      "updateTime": "2026-04-10T11:05:53.548467Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/i8UAnl7ZbVVM6MWI38ff",
+      "fields": {
+        "inhaber": {
+          "stringValue": "Susanne Menauer"
+        },
+        "createdAt": {
+          "timestampValue": "2026-04-14T10:33:04.444Z"
+        },
+        "email": {
+          "stringValue": "praxisvaih@logo-menauer.de"
+        },
+        "telefon": {
+          "stringValue": "07042/8187767"
+        },
+        "name": {
+          "stringValue": "Logopaedie Menauer - Vaihingen/Enz"
+        },
+        "createdBy": {
+          "stringValue": "MEHzv81VZUQVXNFSVgavfnuJtNS2"
+        },
+        "adresse": {
+          "stringValue": "Andreaestr. 16/1, 71665 Vaihingen/Enz"
+        }
+      },
+      "createTime": "2026-04-14T10:33:04.531669Z",
+      "updateTime": "2026-06-10T11:35:01.694426Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/ifRQOD5yqGAznO0rgZjl",
+      "fields": {
+        "email": {
+          "stringValue": "zottilaura@web.de"
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-16T08:56:23.737Z"
+        },
+        "inhaber": {
+          "stringValue": ""
+        },
+        "adresse": {
+          "stringValue": ""
+        },
+        "createdBy": {
+          "stringValue": "2EGdj1VarSTUoPTFXAI7XMzLOcm1"
+        },
+        "name": {
+          "stringValue": "Meine Praxis"
+        },
+        "telefon": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-06-16T08:56:23.843741Z",
+      "updateTime": "2026-06-16T08:56:23.843741Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/jMlq1h7JQkdDtZo0jqTn",
+      "fields": {
+        "createdBy": {
+          "stringValue": "MEHzv81VZUQVXNFSVgavfnuJtNS2"
+        },
+        "name": {
+          "stringValue": "Logopaedie Menauer - Weil der Stadt"
+        },
+        "adresse": {
+          "stringValue": "Stuttgarter Str. 51, 71263 Weil der Stadt"
+        },
+        "telefon": {
+          "stringValue": "07033/137724"
+        },
+        "inhaber": {
+          "stringValue": "Susanne Menauer"
+        },
+        "createdAt": {
+          "timestampValue": "2026-04-14T10:33:04.077Z"
+        },
+        "email": {
+          "stringValue": "praxisweil@logo-menauer.de"
+        }
+      },
+      "createTime": "2026-04-14T10:33:04.338138Z",
+      "updateTime": "2026-06-10T11:35:01.419653Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/lVFEbYOCOML01cu3H9ga",
+      "fields": {
+        "createdAt": {
+          "timestampValue": "2026-04-14T10:31:47.973Z"
+        },
+        "email": {
+          "stringValue": "praxisweil@logo-menauer.de"
+        },
+        "inhaber": {
+          "stringValue": "Susanne Menauer"
+        },
+        "adresse": {
+          "stringValue": "Stuttgarter Str. 51, 71263 Weil der Stadt"
+        },
+        "name": {
+          "stringValue": "Logopaedie Menauer - Weil der Stadt"
+        },
+        "telefon": {
+          "stringValue": "07033/137724"
+        }
+      },
+      "createTime": "2026-04-14T10:31:48.312065Z",
+      "updateTime": "2026-04-14T10:31:48.312065Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/nKIFyccqRlXaQergTQ63",
+      "fields": {
+        "inhaber": {
+          "stringValue": ""
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-16T09:04:49.437Z"
+        },
+        "email": {
+          "stringValue": "michelle.schmidgall@gmail.com"
+        },
+        "telefon": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Meine Praxis"
+        },
+        "createdBy": {
+          "stringValue": "VIAAvQeQh4NySIjciVyHaNyQJEI2"
+        },
+        "adresse": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-06-16T09:04:49.548490Z",
+      "updateTime": "2026-06-16T09:04:49.548490Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/own-praxis-1776418164",
+      "fields": {
+        "email": {
+          "stringValue": "pentest-1776417944@example.com"
+        },
+        "createdBy": {
+          "stringValue": "HHMg6hIQfxQrkMXc2d76vWPFI9g1"
+        },
+        "name": {
+          "stringValue": "My Legit Praxis"
+        }
+      },
+      "createTime": "2026-04-17T09:29:24.901180Z",
+      "updateTime": "2026-04-17T09:29:24.901180Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/praxen/qvgkTQVo8kph8w7JB6D2",
+      "fields": {
+        "createdAt": {
+          "timestampValue": "2026-04-05T12:50:02.813165Z"
+        },
+        "email": {
+          "stringValue": "hamdi@guencavdi.net"
+        },
+        "inhaber": {
+          "stringValue": ""
+        },
+        "adresse": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "hamdi"
+        },
+        "telefon": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-04-05T12:50:03.472810Z",
+      "updateTime": "2026-04-05T12:50:03.472810Z"
+    }
+  ],
+  "users": [
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/2EGdj1VarSTUoPTFXAI7XMzLOcm1",
+      "fields": {
+        "role": {
+          "stringValue": "admin"
+        },
+        "praxisId": {
+          "stringValue": "UMVrBwWaWQO7DXRcunxL"
+        },
+        "email": {
+          "stringValue": "zottilaura@web.de"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "TXGuqqTQvjyTRvvnO0py"
+              },
+              {
+                "stringValue": "UMVrBwWaWQO7DXRcunxL"
+              }
+            ]
+          }
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-16T08:56:23.946Z"
+        }
+      },
+      "createTime": "2026-06-16T08:56:23.898407Z",
+      "updateTime": "2026-06-16T08:56:38.155647Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/2XELLFPXQsb5sb4VZ8ubhoj4C1H3",
+      "fields": {
+        "createdAt": {
+          "timestampValue": "2026-07-02T11:01:47.841Z"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "UMVrBwWaWQO7DXRcunxL"
+              }
+            ]
+          }
+        },
+        "email": {
+          "stringValue": "i.nousair@outlook.com"
+        },
+        "praxisId": {
+          "stringValue": "UMVrBwWaWQO7DXRcunxL"
+        },
+        "role": {
+          "stringValue": "user"
+        }
+      },
+      "createTime": "2026-07-02T11:01:47.986565Z",
+      "updateTime": "2026-07-02T11:01:47.986565Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/9xdTTWHRpnPsF6PXrxVIPBhsEn52",
+      "fields": {
+        "praxisId": {
+          "stringValue": "NjbKmNjLjj8zASsfKJJt"
+        },
+        "email": {
+          "stringValue": "lerntherapie@logo-menauer.de"
+        },
+        "role": {
+          "stringValue": "user"
+        },
+        "displayName": {
+          "stringValue": "Lerntherapie Team"
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-08T11:34:34.047Z"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "NjbKmNjLjj8zASsfKJJt"
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-06-08T11:34:34.138137Z",
+      "updateTime": "2026-06-08T11:34:34.138137Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/GlA56eEZLWhX7U0zz1fFKWPMdIJ2",
+      "fields": {
+        "praxisId": {
+          "stringValue": "UMVrBwWaWQO7DXRcunxL"
+        },
+        "email": {
+          "stringValue": "ditzingen@logo-menauer.de"
+        },
+        "role": {
+          "stringValue": "user"
+        },
+        "displayName": {
+          "stringValue": "Logopaedie Menauer - Ditzingen"
+        },
+        "createdAt": {
+          "timestampValue": "2026-04-14T11:52:02Z"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "UMVrBwWaWQO7DXRcunxL"
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-04-14T11:52:02.484998Z",
+      "updateTime": "2026-04-14T11:52:02.484998Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/MEHzv81VZUQVXNFSVgavfnuJtNS2",
+      "fields": {
+        "email": {
+          "stringValue": "h.guencavdi@hasi-elektronic.de"
+        },
+        "praxisId": {
+          "stringValue": "jMlq1h7JQkdDtZo0jqTn"
+        },
+        "role": {
+          "stringValue": "admin"
+        },
+        "createdAt": {
+          "timestampValue": "2026-05-30T11:33:50.405Z"
+        },
+        "displayName": {
+          "stringValue": "Hamdi Guencavdi (Super-Admin)"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "NjbKmNjLjj8zASsfKJJt"
+              },
+              {
+                "stringValue": "UMVrBwWaWQO7DXRcunxL"
+              },
+              {
+                "stringValue": "i8UAnl7ZbVVM6MWI38ff"
+              },
+              {
+                "stringValue": "jMlq1h7JQkdDtZo0jqTn"
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-05-30T11:33:50.559131Z",
+      "updateTime": "2026-06-20T15:22:36.807862Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/NodWqBGTVrMj7Y1wDibRi0metdP2",
+      "fields": {
+        "praxisId": {
+          "stringValue": "i8UAnl7ZbVVM6MWI38ff"
+        },
+        "email": {
+          "stringValue": "vaihingen@logo-menauer.de"
+        },
+        "role": {
+          "stringValue": "user"
+        },
+        "displayName": {
+          "stringValue": "Logopaedie Menauer - Vaihingen/Enz"
+        },
+        "createdAt": {
+          "timestampValue": "2026-04-14T11:52:03Z"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "i8UAnl7ZbVVM6MWI38ff"
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-04-14T11:52:03.254719Z",
+      "updateTime": "2026-04-14T11:52:03.254719Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/O96RG7vXFNRgCRdSMQDkVxuNBtS2",
+      "fields": {
+        "role": {
+          "stringValue": "user"
+        },
+        "praxisId": {
+          "stringValue": "jMlq1h7JQkdDtZo0jqTn"
+        },
+        "email": {
+          "stringValue": "weil@logo-menauer.de"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "jMlq1h7JQkdDtZo0jqTn"
+              }
+            ]
+          }
+        },
+        "displayName": {
+          "stringValue": "Logopaedie Menauer - Weil der Stadt"
+        },
+        "createdAt": {
+          "timestampValue": "2026-04-14T11:52:01Z"
+        }
+      },
+      "createTime": "2026-04-14T11:52:01.776907Z",
+      "updateTime": "2026-04-14T11:52:01.776907Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/QwOXvyArKces8HQWjzTUyuH3P072",
+      "fields": {
+        "createdAt": {
+          "timestampValue": "2026-06-22T12:25:01.760Z"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "NjbKmNjLjj8zASsfKJJt"
+              }
+            ]
+          }
+        },
+        "praxisId": {
+          "stringValue": "NjbKmNjLjj8zASsfKJJt"
+        },
+        "email": {
+          "stringValue": "claudia.ehrler1@gmail.com"
+        },
+        "role": {
+          "stringValue": "user"
+        }
+      },
+      "createTime": "2026-06-22T12:25:01.817458Z",
+      "updateTime": "2026-06-22T12:25:01.817458Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/VIAAvQeQh4NySIjciVyHaNyQJEI2",
+      "fields": {
+        "createdAt": {
+          "timestampValue": "2026-06-16T09:04:49.594Z"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "nKIFyccqRlXaQergTQ63"
+              },
+              {
+                "stringValue": "UMVrBwWaWQO7DXRcunxL"
+              }
+            ]
+          }
+        },
+        "praxisId": {
+          "stringValue": "UMVrBwWaWQO7DXRcunxL"
+        },
+        "email": {
+          "stringValue": "michelle.schmidgall@gmail.com"
+        },
+        "role": {
+          "stringValue": "admin"
+        }
+      },
+      "createTime": "2026-06-16T09:04:49.654778Z",
+      "updateTime": "2026-06-16T09:22:48.390212Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/WB4skoF52WZnrYGF3njTRjSwdov1",
+      "fields": {
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "UMVrBwWaWQO7DXRcunxL"
+              }
+            ]
+          }
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-23T10:19:22.619Z"
+        },
+        "role": {
+          "stringValue": "user"
+        },
+        "email": {
+          "stringValue": "v.gojan@gmx.de"
+        },
+        "praxisId": {
+          "stringValue": "UMVrBwWaWQO7DXRcunxL"
+        }
+      },
+      "createTime": "2026-06-23T10:19:22.698238Z",
+      "updateTime": "2026-06-23T10:19:22.698238Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/dznFqHF1ZrOkCHaQP8KBZ9aFmuA2",
+      "fields": {
+        "email": {
+          "stringValue": "enes.sivrikaya61@web.de"
+        },
+        "praxisId": {
+          "stringValue": "2ue1U8Pf5AV3KgHluVBd"
+        },
+        "role": {
+          "stringValue": "admin"
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-12T17:43:41.549Z"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "2ue1U8Pf5AV3KgHluVBd"
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-06-12T17:43:41.626822Z",
+      "updateTime": "2026-06-12T17:43:41.626822Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/fdCSVilfzZb5cQyc8PBjbu07mzO2",
+      "fields": {
+        "role": {
+          "stringValue": "admin"
+        },
+        "email": {
+          "stringValue": "milli.roehrborn@ymail.com"
+        },
+        "praxisId": {
+          "stringValue": "jMlq1h7JQkdDtZo0jqTn"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "jMlq1h7JQkdDtZo0jqTn"
+              }
+            ]
+          }
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-17T11:16:45.050Z"
+        }
+      },
+      "createTime": "2026-06-17T11:16:45.104999Z",
+      "updateTime": "2026-06-20T15:23:08.002487Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/kstUUVkhsAZEMw2KlZwZavAGQRQ2",
+      "fields": {
+        "role": {
+          "stringValue": "user"
+        },
+        "email": {
+          "stringValue": "judith.emmerich@gmx.de"
+        },
+        "praxisId": {
+          "stringValue": "i8UAnl7ZbVVM6MWI38ff"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "i8UAnl7ZbVVM6MWI38ff"
+              }
+            ]
+          }
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-16T12:27:30.023Z"
+        }
+      },
+      "createTime": "2026-06-16T12:27:30.067287Z",
+      "updateTime": "2026-06-19T15:55:33.035135Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/lbLjuSaWtThnFpBzxSZ1oYJNCPw1",
+      "fields": {
+        "praxisId": {
+          "stringValue": "jMlq1h7JQkdDtZo0jqTn"
+        },
+        "email": {
+          "stringValue": "lenaweimer@gmx.de"
+        },
+        "role": {
+          "stringValue": "user"
+        },
+        "createdAt": {
+          "timestampValue": "2026-07-02T11:27:33.016Z"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "jMlq1h7JQkdDtZo0jqTn"
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-07-02T11:27:33.071100Z",
+      "updateTime": "2026-07-02T11:27:33.071100Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/m5MEg3lEAQNpBQIc1WSzbvqwyCv1",
+      "fields": {
+        "createdAt": {
+          "timestampValue": "2026-04-14T11:52:03Z"
+        },
+        "displayName": {
+          "stringValue": "Susanne Menauer (Admin)"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "jMlq1h7JQkdDtZo0jqTn"
+              },
+              {
+                "stringValue": "UMVrBwWaWQO7DXRcunxL"
+              },
+              {
+                "stringValue": "i8UAnl7ZbVVM6MWI38ff"
+              },
+              {
+                "stringValue": "NjbKmNjLjj8zASsfKJJt"
+              }
+            ]
+          }
+        },
+        "email": {
+          "stringValue": "admin@logo-menauer.de"
+        },
+        "praxisId": {
+          "stringValue": "jMlq1h7JQkdDtZo0jqTn"
+        },
+        "role": {
+          "stringValue": "admin"
+        }
+      },
+      "createTime": "2026-04-14T10:33:04.932914Z",
+      "updateTime": "2026-07-07T14:23:45.813311Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/t1JVsd6OSZYMdTOEUXqot0Am2J23",
+      "fields": {
+        "createdAt": {
+          "timestampValue": "2026-06-16T12:42:56.250Z"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "i8UAnl7ZbVVM6MWI38ff"
+              }
+            ]
+          }
+        },
+        "praxisId": {
+          "stringValue": "i8UAnl7ZbVVM6MWI38ff"
+        },
+        "email": {
+          "stringValue": "f.adelhelm@gmx.de"
+        },
+        "role": {
+          "stringValue": "user"
+        }
+      },
+      "createTime": "2026-06-16T12:42:56.293270Z",
+      "updateTime": "2026-06-19T15:55:33.385142Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/tnyBDuM3abQ5T5JfC78tSIueCbt1",
+      "fields": {
+        "role": {
+          "stringValue": "admin"
+        },
+        "email": {
+          "stringValue": "aynur.aktag@outlook.de"
+        },
+        "praxisId": {
+          "stringValue": "UMVrBwWaWQO7DXRcunxL"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "0IQUq5x2DcUkJ1isnRVX"
+              },
+              {
+                "stringValue": "UMVrBwWaWQO7DXRcunxL"
+              }
+            ]
+          }
+        },
+        "createdAt": {
+          "timestampValue": "2026-06-16T10:33:07.291Z"
+        }
+      },
+      "createTime": "2026-06-16T10:33:07.344919Z",
+      "updateTime": "2026-06-16T10:35:13.222159Z"
+    },
+    {
+      "name": "projects/warteliste-pro/databases/(default)/documents/users/wjQd5ycMVdgG1XC1OhThCBkzBo93",
+      "fields": {
+        "createdAt": {
+          "timestampValue": "2026-06-16T16:06:49.430Z"
+        },
+        "displayName": {
+          "stringValue": "Mitarbeiterin Vaihingen"
+        },
+        "praxisIds": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "i8UAnl7ZbVVM6MWI38ff"
+              }
+            ]
+          }
+        },
+        "email": {
+          "stringValue": "sassizwerg@gmx.net"
+        },
+        "praxisId": {
+          "stringValue": "i8UAnl7ZbVVM6MWI38ff"
+        },
+        "role": {
+          "stringValue": "user"
+        }
+      },
+      "createTime": "2026-06-16T11:21:40.422531Z",
+      "updateTime": "2026-06-16T16:06:49.561980Z"
+    }
+  ]
+}

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Responsive Container fuer Web: begrenzt die maximale Breite und zentriert.

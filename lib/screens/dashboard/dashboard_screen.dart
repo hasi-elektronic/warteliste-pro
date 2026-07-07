@@ -3,14 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/strings.dart';
 import '../../models/patient.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/patienten_provider.dart';
-import '../../providers/standort_provider.dart';
 import '../../utils/theme.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/kpi_card.dart';
 import '../../widgets/standort_switcher.dart';
-import '../../widgets/web_layout.dart';
 import '../warteliste/warteliste_screen.dart';
 import '../statistik/statistik_screen.dart';
 import '../einstellungen/einstellungen_screen.dart';

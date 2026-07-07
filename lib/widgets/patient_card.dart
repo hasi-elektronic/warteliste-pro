@@ -4,9 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/patient.dart';
-import '../models/therapeut.dart';
 import '../providers/patienten_provider.dart';
-import '../providers/standort_provider.dart';
 import '../utils/theme.dart';
 import 'status_badge.dart';
 

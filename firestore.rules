@@ -182,11 +182,13 @@ service cloud.firestore {
         && request.resource.data.get('createdBy', '') == request.auth.uid;
 
       // Update:
-      //  (1) Mitglied; createdBy bleibt unveraendert, ODER
+      //  (1) Admin oder Owner der Praxis; createdBy bleibt unveraendert.
+      //      Normale Mitarbeiter duerfen Stammdaten (Name, Email, Adresse)
+      //      NICHT aendern — nur Subcollections (Patienten etc.). ODER
       //  (2) Selbst-Claim: legacy Praxis ohne createdBy, Email matcht,
       //      nur das Feld createdBy darf sich aendern.
       allow update: if (
-          isPraxisMember(praxisId)
+          (isPraxisAdmin(praxisId) || isPraxisOwnedBy(praxisId, request.auth.uid))
           && request.resource.data.get('createdBy', '') ==
              resource.data.get('createdBy', '')
         )
