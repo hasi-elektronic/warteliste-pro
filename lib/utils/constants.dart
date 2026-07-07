@@ -41,6 +41,8 @@ class AppConstants {
     'Parkinson',
     'Hoergeraet/CI',
     'Lispeln',
+    'LRS',
+    'Dyskalkulie',
   ];
 
   // ──────────────────────────────────────────────
@@ -49,11 +51,13 @@ class AppConstants {
 
   static const String versicherungKK = 'KK';
   static const String versicherungPrivat = 'Privat';
+  static const String versicherungJugendamt = 'Jugendamt';
   static const String versicherungSonstiges = 'Sonstiges';
 
   static const List<String> versicherungsarten = [
     versicherungKK,
     versicherungPrivat,
+    versicherungJugendamt,
     versicherungSonstiges,
   ];
 

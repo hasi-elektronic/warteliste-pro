@@ -1,4 +1,5 @@
 import 'dart:io' show File, Directory;
+import 'dart:ui' show Rect;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
@@ -16,15 +17,27 @@ class ExportService {
   static const String _xlsxMime =
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
+  /// iOS verlangt einen non-zero Rect fuer sharePositionOrigin
+  /// (auch auf iPhone, wenn das Popover-Verhalten ausgewaehlt wurde).
+  /// Wir geben einen kleinen Default-Rect mit; iPhone ignoriert ihn,
+  /// iPad zeigt das Popover an dieser Stelle.
+  static const Rect _defaultShareOrigin = Rect.fromLTWH(0, 0, 100, 100);
+
   ExportService();
 
   /// Speichert Excel-Bytes und teilt/downloadet sie je nach Plattform.
   ///
   /// [bytes] - Die rohen Datei-Bytes (z.B. von ExcelService.exportToExcel).
   /// [filename] - Der Dateiname inkl. Endung, z.B. 'warteliste_2024.xlsx'.
+  /// [sharePositionOrigin] - Optional fuer iPad: Anker-Rect fuer das
+  /// Share-Popover. Wenn null, wird ein Default-Rect verwendet.
   ///
   /// Gibt auf Mobile/Desktop den Dateipfad zurueck, auf Web den Dateinamen.
-  Future<String> shareExcel(List<int> bytes, String filename) async {
+  Future<String> shareExcel(
+    List<int> bytes,
+    String filename, {
+    Rect? sharePositionOrigin,
+  }) async {
     if (kIsWeb) {
       downloader.downloadBytes(bytes, filename, _xlsxMime);
       return filename;
@@ -39,6 +52,7 @@ class ExportService {
     await Share.shareXFiles(
       [XFile(filePath)],
       subject: filename,
+      sharePositionOrigin: sharePositionOrigin ?? _defaultShareOrigin,
     );
 
     return filePath;

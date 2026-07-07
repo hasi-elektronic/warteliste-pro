@@ -580,6 +580,11 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                   icon: const Icon(Icons.shield_outlined, size: 16),
                 ),
                 ButtonSegment(
+                  value: AppConstants.versicherungJugendamt,
+                  label: Text(isDe ? 'Jugendamt' : 'Youth Office'),
+                  icon: const Icon(Icons.family_restroom_outlined, size: 16),
+                ),
+                ButtonSegment(
                   value: AppConstants.versicherungSonstiges,
                   label: Text(isDe ? 'Sonstiges' : 'Other'),
                   icon: const Icon(Icons.more_horiz, size: 16),

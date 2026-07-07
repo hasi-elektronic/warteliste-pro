@@ -57,7 +57,6 @@ class BerichtPdfService {
 
     final isBrief = bericht.kategorie == BerichtKategorie.brief;
     final fmtDate = DateFormat('dd.MM.yyyy');
-    final color = _pdfColorFor(bericht.kategorie);
 
     final pw.Widget? logoWidget = briefpapier.logoBytes != null
         ? pw.Image(
@@ -139,28 +138,10 @@ class BerichtPdfService {
           ),
           pw.SizedBox(height: 28),
 
-          // ── 3) Kategorie-Tag (nur Nicht-Brief) ───────────────
-          if (!isBrief) ...[
-            pw.Container(
-              padding:
-                  const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: pw.BoxDecoration(
-                color: color.shade(0.92),
-                borderRadius: pw.BorderRadius.circular(3),
-                border: pw.Border.all(color: color, width: 0.6),
-              ),
-              child: pw.Text(
-                bericht.kategorie.label.toUpperCase(),
-                style: pw.TextStyle(
-                  fontSize: 8,
-                  color: color,
-                  letterSpacing: 1.0,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-            ),
-            pw.SizedBox(height: 8),
-          ],
+          // ── 3) Kategorie-Tag: bewusst NICHT im PDF.
+          //   Der farbige Balken druckte auf manchen Geraeten als
+          //   dunkler, unlesbarer Block (Kundenfeedback Menauer 07/2026).
+          //   Die Kategorie steht bereits in den PDF-Metadaten.
 
           // ── 4) Betrifft / Titel ──────────────────────────────
           if (bericht.titel.isNotEmpty) ...[
@@ -175,7 +156,7 @@ class BerichtPdfService {
               ),
               pw.SizedBox(height: 4),
               pw.Text(
-                bericht.titel,
+                _sanitize(bericht.titel),
                 style: pw.TextStyle(
                   fontSize: 11,
                   color: PdfColors.grey900,
@@ -185,7 +166,7 @@ class BerichtPdfService {
               pw.SizedBox(height: 22),
             ] else ...[
               pw.Text(
-                bericht.titel,
+                _sanitize(bericht.titel),
                 style: pw.TextStyle(
                   fontSize: 18,
                   fontWeight: pw.FontWeight.bold,
@@ -411,6 +392,27 @@ class BerichtPdfService {
     );
   }
 
+  /// Entfernt Unicode-Zeichen, die die PDF-Fonts nicht darstellen koennen
+  /// und die als schwarze Tofu-Kaestchen drucken. iOS/iPad-Tastaturen
+  /// fuegen bei Soft-Zeilenumbruechen U+2028 ein; Word-Paste bringt U+000B.
+  /// Zeilentrenner werden zu echten Newlines, Steuerzeichen entfernt.
+  static String _sanitize(String text) {
+    return text
+        .replaceAll('\u2028', '\n') // LINE SEPARATOR (iOS soft break)
+        .replaceAll('\u2029', '\n') // PARAGRAPH SEPARATOR
+        .replaceAll('\u000B', '\n') // VERTICAL TAB (Word)
+        .replaceAll('\r', '')
+        // Unsichtbare Zeichen: OBJ-Replacement, BOM, Soft-Hyphen,
+        // Zero-Width-*, Word-Joiner, restliche Steuerzeichen.
+        .replaceAll(
+          RegExp(
+            r'[\uFFFC\uFFFD\uFEFF\u00AD\u200B-\u200F\u2060'
+            r'\u0000-\u0008\u000C\u000E-\u001F\u007F-\u009F]',
+          ),
+          '',
+        );
+  }
+
   // ── Quill Delta -> PDF widgets ─────────────────────────────────
   static List<pw.Widget> _renderQuillContent(String inhalt, String fallback) {
     List<dynamic>? ops;
@@ -422,7 +424,7 @@ class BerichtPdfService {
     if (ops == null) {
       return [
         pw.Text(
-          (fallback.isNotEmpty ? fallback : inhalt),
+          _sanitize(fallback.isNotEmpty ? fallback : inhalt),
           style: const pw.TextStyle(
             fontSize: 11,
             color: PdfColors.grey900,
@@ -519,7 +521,7 @@ class BerichtPdfService {
       final attrs = (op['attributes'] as Map?)?.cast<String, dynamic>() ?? {};
 
       if (insert is String) {
-        final parts = insert.split('\n');
+        final parts = _sanitize(insert).split('\n');
         for (var i = 0; i < parts.length; i++) {
           final segment = parts[i];
           final isLast = i == parts.length - 1;
@@ -543,7 +545,7 @@ class BerichtPdfService {
     return widgets.isEmpty
         ? [
             pw.Text(
-              fallback.isNotEmpty ? fallback : '(leer)',
+              _sanitize(fallback.isNotEmpty ? fallback : '(leer)'),
               style: const pw.TextStyle(
                   fontSize: 11, color: PdfColors.grey800),
             )
@@ -559,25 +561,6 @@ class BerichtPdfService {
         lower.contains('mfg') ||
         lower.contains('herzliche grüße') ||
         lower.contains('hochachtungsvoll');
-  }
-
-  static PdfColor _pdfColorFor(BerichtKategorie k) {
-    switch (k) {
-      case BerichtKategorie.verordnungsbericht:
-        return _kAccentBlau;
-      case BerichtKategorie.brief:
-        return _kAccentBlau;
-      case BerichtKategorie.verlaufsbericht:
-        return PdfColor.fromInt(0xFF059669);
-      case BerichtKategorie.anamnese:
-        return PdfColor.fromInt(0xFF0F766E);
-      case BerichtKategorie.telefonat:
-        return PdfColor.fromInt(0xFF0891B2);
-      case BerichtKategorie.uebergabe:
-        return PdfColor.fromInt(0xFFD97706);
-      case BerichtKategorie.allgemein:
-        return PdfColor.fromInt(0xFF64748B);
-    }
   }
 
   // ── Public API ────────────────────────────────────────────────
@@ -624,14 +607,4 @@ class _InlineRun {
     this.underline = false,
     this.code = false,
   });
-}
-
-extension on PdfColor {
-  PdfColor shade(double t) {
-    return PdfColor(
-      red + (1 - red) * t,
-      green + (1 - green) * t,
-      blue + (1 - blue) * t,
-    );
-  }
 }

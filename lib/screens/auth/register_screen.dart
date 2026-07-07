@@ -66,7 +66,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       final errorStr = e.toString();
 
       if (errorStr.contains('email-already-in-use')) {
-        message = 'Diese E-Mail wird bereits verwendet.';
+        message = 'Diese E-Mail wird bereits verwendet. '
+            'Bitte einloggen statt registrieren.';
+      } else if (errorStr.contains('no-invite-no-praxis-name')) {
+        message = 'Keine Einladung gefunden — bitte den Praxis-Namen '
+            'eingeben, um eine neue Praxis anzulegen.';
       } else if (errorStr.contains('weak-password')) {
         message = 'Das Passwort ist zu schwach. Mindestens 6 Zeichen.';
       } else if (errorStr.contains('invalid-email')) {
@@ -126,24 +130,60 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           color: Colors.grey.shade600,
                         ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
 
-                  // ── Praxis-Name ──
+                  // ── Einladungs-Hinweis ──
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.primaryColor.withOpacity(0.2),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: AppTheme.primaryColor,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Wurden Sie eingeladen? Tragen Sie einfach E-Mail '
+                            'und ein selbst gewaehltes Passwort ein — der '
+                            'Praxis-Name wird ignoriert und Sie kommen '
+                            'automatisch in die richtige Praxis.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade800,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Praxis-Name (optional bei Einladung) ──
                   TextFormField(
                     controller: _praxisNameController,
                     textInputAction: TextInputAction.next,
                     textCapitalization: TextCapitalization.words,
                     decoration: const InputDecoration(
-                      labelText: 'Praxis-Name',
+                      labelText: 'Praxis-Name (nur bei neuer Praxis)',
                       prefixIcon: Icon(Icons.business_outlined),
-                      hintText: 'z.B. Logopaedie Musterstadt',
+                      hintText: 'Bei Einladung leer lassen',
                     ),
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Bitte Praxis-Name eingeben.';
-                      }
+                      // Bei Einladung darf das Feld leer sein.
+                      if (value == null || value.trim().isEmpty) return null;
                       if (value.trim().length < 3) {
-                        return 'Mindestens 3 Zeichen.';
+                        return 'Mindestens 3 Zeichen oder leer lassen.';
                       }
                       return null;
                     },

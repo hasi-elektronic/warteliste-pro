@@ -1390,6 +1390,15 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
+                onPressed: _showChangePasswordDialog,
+                icon: const Icon(Icons.lock_outline_rounded),
+                label: const Text('Passwort aendern'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
                 onPressed: _signOut,
                 icon: const Icon(Icons.logout_rounded),
                 label: Text(s.abmelden),
@@ -1398,6 +1407,129 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                   side: const BorderSide(color: AppTheme.errorColor),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final currentCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    bool obscure1 = true, obscure2 = true, busy = false;
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Passwort aendern'),
+          content: SizedBox(
+            width: 360,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: currentCtrl,
+                  obscureText: obscure1,
+                  decoration: InputDecoration(
+                    labelText: 'Aktuelles Passwort',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(obscure1
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined),
+                      onPressed: () => setLocal(() => obscure1 = !obscure1),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: newCtrl,
+                  obscureText: obscure2,
+                  decoration: InputDecoration(
+                    labelText: 'Neues Passwort (mind. 6 Zeichen)',
+                    prefixIcon: const Icon(Icons.lock_reset_outlined),
+                    suffixIcon: IconButton(
+                      icon: Icon(obscure2
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined),
+                      onPressed: () => setLocal(() => obscure2 = !obscure2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: confirmCtrl,
+                  obscureText: obscure2,
+                  decoration: const InputDecoration(
+                    labelText: 'Neues Passwort bestaetigen',
+                    prefixIcon: Icon(Icons.lock_reset_outlined),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: busy ? null : () => Navigator.of(ctx).pop(),
+              child: const Text('Abbrechen'),
+            ),
+            FilledButton(
+              onPressed: busy
+                  ? null
+                  : () async {
+                      final cur = currentCtrl.text;
+                      final nw = newCtrl.text;
+                      final cf = confirmCtrl.text;
+                      if (cur.isEmpty || nw.isEmpty || cf.isEmpty) {
+                        _showSnackBar('Bitte alle Felder ausfuellen',
+                            isError: true);
+                        return;
+                      }
+                      if (nw.length < 6) {
+                        _showSnackBar('Neues Passwort min. 6 Zeichen',
+                            isError: true);
+                        return;
+                      }
+                      if (nw != cf) {
+                        _showSnackBar('Passwoerter stimmen nicht ueberein',
+                            isError: true);
+                        return;
+                      }
+                      setLocal(() => busy = true);
+                      try {
+                        await ref
+                            .read(firebaseServiceProvider)
+                            .changePassword(
+                              currentPassword: cur,
+                              newPassword: nw,
+                            );
+                        if (mounted) {
+                          Navigator.of(ctx).pop();
+                          _showSnackBar('Passwort erfolgreich geaendert');
+                        }
+                      } catch (e) {
+                        setLocal(() => busy = false);
+                        final s = e.toString();
+                        String msg = 'Fehler: $e';
+                        if (s.contains('wrong-password') ||
+                            s.contains('invalid-credential')) {
+                          msg = 'Aktuelles Passwort ist falsch.';
+                        } else if (s.contains('weak-password')) {
+                          msg = 'Neues Passwort zu schwach.';
+                        } else if (s.contains('requires-recent-login')) {
+                          msg = 'Bitte erneut anmelden und nochmal versuchen.';
+                        }
+                        _showSnackBar(msg, isError: true);
+                      }
+                    },
+              child: busy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Speichern'),
             ),
           ],
         ),

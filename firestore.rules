@@ -28,6 +28,20 @@ service cloud.firestore {
              .data.get('createdBy', '') == uid;
     }
 
+    // Admin der Praxis: User-Doc hat role=admin UND praxisId ist in
+    // praxisIds (oder primary praxisId). Erlaubt mehrere Administratoren
+    // pro Praxis ohne dass jeder der "Owner" sein muss.
+    function isPraxisAdmin(praxisId) {
+      let userRef = /databases/$(database)/documents/users/$(request.auth.uid);
+      return signedIn()
+        && exists(userRef)
+        && get(userRef).data.get('role', '') == 'admin'
+        && (
+          get(userRef).data.get('praxisId', '') == praxisId
+          || praxisId in get(userRef).data.get('praxisIds', [])
+        );
+    }
+
     // Mitgliedschaft: users/{uid}.praxisIds ist Quelle der Wahrheit, weil
     // Schreibzugriff auf dieses Feld via Regeln streng gated ist
     // (Hinzufuegen erfordert Ownership oder Invite).
@@ -121,17 +135,21 @@ service cloud.firestore {
 
     // ================= /invites/{inviteId} =================
     match /invites/{inviteId} {
-      // Read: Empfaenger (per email) ODER Owner der Praxis
+      // Read: Empfaenger (per email) ODER Owner/Admin der Praxis
       allow read: if signedIn()
         && (
           resource.data.get('email', '') == request.auth.token.email
           || isPraxisOwnedBy(resource.data.get('praxisId', ''), request.auth.uid)
+          || isPraxisAdmin(resource.data.get('praxisId', ''))
         );
 
-      // Create: nur Owner der Ziel-Praxis; deterministische ID erzwingen
+      // Create: Owner ODER Admin der Ziel-Praxis; deterministische ID
       allow create: if signedIn()
         && request.resource.data.keys().hasAll(['email', 'praxisId'])
-        && isPraxisOwnedBy(request.resource.data.praxisId, request.auth.uid)
+        && (
+          isPraxisOwnedBy(request.resource.data.praxisId, request.auth.uid)
+          || isPraxisAdmin(request.resource.data.praxisId)
+        )
         && inviteId == inviteIdFor(
              request.resource.data.praxisId,
              request.resource.data.email
@@ -139,11 +157,12 @@ service cloud.firestore {
 
       allow update: if false;
 
-      // Delete: Empfaenger (nach Einloesung) ODER Praxis-Owner
+      // Delete: Empfaenger (nach Einloesung) ODER Owner/Admin
       allow delete: if signedIn()
         && (
           resource.data.get('email', '') == request.auth.token.email
           || isPraxisOwnedBy(resource.data.get('praxisId', ''), request.auth.uid)
+          || isPraxisAdmin(resource.data.get('praxisId', ''))
         );
     }
 

@@ -157,11 +157,16 @@ class FirebaseService {
     return credential;
   }
 
-  /// Registriert einen neuen Nutzer und erstellt die zugehoerige Praxis.
+  /// Registriert einen neuen Nutzer.
   ///
-  /// 1. Firebase-Auth-Account anlegen
-  /// 2. Praxis-Dokument erstellen
-  /// 3. User-Dokument mit praxisId-Mapping erstellen
+  /// Zwei Wege:
+  ///  A) Es existiert eine offene Einladung fuer diese E-Mail
+  ///     → User tritt der bereits existierenden Praxis als Mitarbeiter
+  ///       bei (role=user). Es wird KEINE neue Praxis angelegt — das
+  ///       verhindert Doppel-Praxen wenn jemand eingeladene Person sich
+  ///       statt einzuloggen ueber den Registrieren-Flow neu anmeldet.
+  ///  B) Keine Einladung vorhanden
+  ///     → Neue Praxis wird angelegt, User ist Inhaber (role=admin).
   Future<UserCredential> signUp(
     String email,
     String password,
@@ -173,8 +178,52 @@ class FirebaseService {
     );
 
     final uid = credential.user!.uid;
+    final normalizedEmail = email.trim().toLowerCase();
 
-    // Praxis erstellen
+    // A) Einladungen pruefen
+    final invites = await _firestore
+        .collection('invites')
+        .where('email', isEqualTo: normalizedEmail)
+        .get();
+
+    if (invites.docs.isNotEmpty) {
+      final praxisIds = invites.docs
+          .map((d) => d.data()['praxisId'] as String)
+          .toSet()
+          .toList();
+
+      await _usersRef.doc(uid).set({
+        'email': normalizedEmail,
+        'praxisId': praxisIds.first,
+        'praxisIds': praxisIds,
+        'role': 'user',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // Einladungen verbrauchen
+      for (final inv in invites.docs) {
+        try {
+          await inv.reference.delete();
+        } catch (_) {}
+      }
+
+      _cachedPraxisId = praxisIds.first;
+      return credential;
+    }
+
+    // B) Kein Invite — Praxis-Name ist Pflicht.
+    if (praxisName.trim().isEmpty) {
+      // Auth-User wieder loeschen, sonst bleibt Karteileiche.
+      try {
+        await credential.user?.delete();
+      } catch (_) {}
+      throw FirebaseAuthException(
+        code: 'no-invite-no-praxis-name',
+        message:
+            'Keine Einladung gefunden. Bitte einen Praxis-Namen eingeben, '
+            'wenn Sie eine neue Praxis anlegen moechten.',
+      );
+    }
     final praxisDoc = _praxenRef.doc();
     final praxis = Praxis(
       id: praxisDoc.id,
@@ -185,7 +234,6 @@ class FirebaseService {
     );
     await praxisDoc.set(praxis.toFirestore());
 
-    // User-Dokument mit Praxis-Mapping (Ersteller = Admin)
     await _usersRef.doc(uid).set({
       'email': email.trim(),
       'praxisId': praxisDoc.id,
@@ -202,6 +250,33 @@ class FirebaseService {
   Future<void> signOut() async {
     _cachedPraxisId = null;
     await _auth.signOut();
+  }
+
+  /// Sendet eine Passwort-Zuruecksetzen-Mail an die angegebene Adresse.
+  /// Funktioniert auch wenn der User aktuell nicht eingeloggt ist.
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _auth.sendPasswordResetEmail(email: email.trim());
+  }
+
+  /// Aendert das Passwort des aktuell eingeloggten Nutzers.
+  /// Erfordert eine frische Authentifizierung (re-authenticate) — sonst
+  /// wirft Firebase 'requires-recent-login'.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) {
+      throw FirebaseAuthException(
+        code: 'no-user', message: 'Kein angemeldeter Nutzer.');
+    }
+    // Re-Auth mit aktuellem Passwort
+    final cred = EmailAuthProvider.credential(
+      email: user.email!,
+      password: currentPassword,
+    );
+    await user.reauthenticateWithCredential(cred);
+    await user.updatePassword(newPassword);
   }
 
   // ============================================================
