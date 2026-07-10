@@ -1,0 +1,21 @@
+name = "warteliste-pro-backup"
+main = "src/index.js"
+compatibility_date = "2024-09-01"
+account_id = "ac6ab4ce1149a3591d014841856490af"
+
+# Nightly full Firestore dump → R2 (03:15 UTC daily)
+[triggers]
+crons = ["15 3 * * *"]
+
+# Backups landen im gleichen Bucket wie die Dokumente, unter /backups/
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "warteliste-pro-docs"
+
+[vars]
+FIREBASE_PROJECT_ID = "warteliste-pro"
+BACKUP_PREFIX = "backups/firestore"
+RETENTION_DAYS = "30"
+# SA_CLIENT_EMAIL + SA_PRIVATE_KEY werden als Worker-Secrets gesetzt.
+# Optionaler Admin-Token fuer manuellen Trigger (GET /run?token=...)
+# MANUAL_TRIGGER_TOKEN als Secret.

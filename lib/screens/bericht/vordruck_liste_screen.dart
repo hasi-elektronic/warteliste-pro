@@ -160,7 +160,7 @@ class _VordruckCardState extends State<_VordruckCard> {
   @override
   Widget build(BuildContext context) {
     final v = widget.vordruck;
-    final isDocx = v.erweiterung == 'docx';
+    final isDocx = v.istWord;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),

@@ -47,10 +47,16 @@ class Vordruck {
         return 'application/pdf';
       case 'docx':
         return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'doc':
+        return 'application/msword';
       default:
         return 'application/octet-stream';
     }
   }
+
+  /// True für alle Word-Formate (doc/docx) — diese werden nur
+  /// heruntergeladen, nicht in-App gedruckt.
+  bool get istWord => erweiterung == 'doc' || erweiterung == 'docx';
 
   const Vordruck({
     required this.id,

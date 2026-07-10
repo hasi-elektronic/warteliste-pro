@@ -70,6 +70,300 @@ class VordruckService {
       color: AppTheme.warningColor,
       assetPfad: 'assets/vordrucke/anforderung_bericht.pdf',
     ),
+
+    // ── Befundberichte (Weil der Stadt) ──────────────────────────
+    Vordruck(
+      id: 'weil_befund_avws',
+      titel: 'Befund: AVWS',
+      beschreibung:
+          'Logopädischer Befundbericht — Auditive Verarbeitungs- und Wahrnehmungsstörung',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/befund_avws.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_befund_dysarthrie',
+      titel: 'Befund: Dysarthrie',
+      beschreibung:
+          'Logopädischer Befundbericht — Dysarthrie',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/befund_dysarthrie.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_befund_dysgrammatismus',
+      titel: 'Befund: Dysgrammatismus',
+      beschreibung:
+          'Logopädischer Befundbericht — Dysgrammatismus',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/befund_dysgrammatismus.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_befund_dysphagie',
+      titel: 'Befund: Dysphagie',
+      beschreibung:
+          'Logopädischer Befundbericht — Schluckstörung',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/befund_dysphagie.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_befund_facialis',
+      titel: 'Befund: Fazialisparese',
+      beschreibung:
+          'Logopädischer Befundbericht — Fazialisparese',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/befund_facialis.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_befund_mfs',
+      titel: 'Befund: Myofunktionelle Störung',
+      beschreibung:
+          'Logopädischer Befundbericht — MFS',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/befund_mfs.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_befund_phonologie',
+      titel: 'Befund: Phonologische Störung',
+      beschreibung:
+          'Logopädischer Befundbericht — Phonologie',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/befund_phonologie.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_befund_ses',
+      titel: 'Befund: SES',
+      beschreibung:
+          'Logopädischer Befundbericht — Sprachentwicklungsstörung',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/befund_ses.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_befund_stimme',
+      titel: 'Befund: Stimmstörung',
+      beschreibung:
+          'Logopädischer Befundbericht — Stimme',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/befund_stimme.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_befund_stottern',
+      titel: 'Befund: Stottern',
+      beschreibung:
+          'Logopädischer Befundbericht — Redeflussstörung',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/befund_stottern.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_befundbericht_dysphagie',
+      titel: 'Befundbericht: Dysphagie',
+      beschreibung:
+          'Ausführlicher Befundbericht — Schluckstörung',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/befundbericht_dysphagie.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_befundvorlage',
+      titel: 'Befundvorlage (allgemein)',
+      beschreibung:
+          'Leere Befund-Grundvorlage zum freien Ausfüllen',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/befundvorlage.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_dyslalie_befund',
+      titel: 'Befund: Dyslalie',
+      beschreibung:
+          'Logopädischer Befundbericht — Dyslalie',
+      gruppe: 'Befundberichte (Weil der Stadt)',
+      icon: Icons.assignment_outlined,
+      color: Color(0xFF0F766E),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/dyslalie_befund.doc',
+      erweiterung: 'doc',
+    ),
+
+    // ── Mitteilungen an den Arzt (Weil der Stadt) ────────────────
+    Vordruck(
+      id: 'weil_mitteilung_avws',
+      titel: 'Mitteilung an Arzt: AVWS',
+      beschreibung:
+          'Kurzmitteilung an die verordnende Ärztin/den Arzt — AVWS',
+      gruppe: 'Mitteilungen an den Arzt (Weil der Stadt)',
+      icon: Icons.mail_outline,
+      color: Color(0xFF2563EB),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/mitteilung_avws.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_mitteilung_aphasie',
+      titel: 'Mitteilung an Arzt: Aphasie',
+      beschreibung:
+          'Kurzmitteilung an die verordnende Ärztin/den Arzt — Aphasie',
+      gruppe: 'Mitteilungen an den Arzt (Weil der Stadt)',
+      icon: Icons.mail_outline,
+      color: Color(0xFF2563EB),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/mitteilung_aphasie.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_mitteilung_dysarthrie',
+      titel: 'Mitteilung an Arzt: Dysarthrie',
+      beschreibung:
+          'Kurzmitteilung an die verordnende Ärztin/den Arzt — Dysarthrie',
+      gruppe: 'Mitteilungen an den Arzt (Weil der Stadt)',
+      icon: Icons.mail_outline,
+      color: Color(0xFF2563EB),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/mitteilung_dysarthrie.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_mitteilung_dyslalie',
+      titel: 'Mitteilung an Arzt: Dyslalie',
+      beschreibung:
+          'Kurzmitteilung an die verordnende Ärztin/den Arzt — Dyslalie',
+      gruppe: 'Mitteilungen an den Arzt (Weil der Stadt)',
+      icon: Icons.mail_outline,
+      color: Color(0xFF2563EB),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/mitteilung_dyslalie.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_mitteilung_dyslalie_2',
+      titel: 'Mitteilung an Arzt: Dyslalie (Variante 2)',
+      beschreibung:
+          'Alternative Kurzmitteilung — Dyslalie',
+      gruppe: 'Mitteilungen an den Arzt (Weil der Stadt)',
+      icon: Icons.mail_outline,
+      color: Color(0xFF2563EB),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/mitteilung_dyslalie_2.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_mitteilung_dysphagie',
+      titel: 'Mitteilung an Arzt: Dysphagie',
+      beschreibung:
+          'Kurzmitteilung an die verordnende Ärztin/den Arzt — Dysphagie',
+      gruppe: 'Mitteilungen an den Arzt (Weil der Stadt)',
+      icon: Icons.mail_outline,
+      color: Color(0xFF2563EB),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/mitteilung_dysphagie.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_mitteilung_facialis',
+      titel: 'Mitteilung an Arzt: Fazialisparese',
+      beschreibung:
+          'Kurzmitteilung an die verordnende Ärztin/den Arzt — Fazialisparese',
+      gruppe: 'Mitteilungen an den Arzt (Weil der Stadt)',
+      icon: Icons.mail_outline,
+      color: Color(0xFF2563EB),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/mitteilung_facialis.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_mitteilung_myo',
+      titel: 'Mitteilung an Arzt: Myofunktionelle Störung',
+      beschreibung:
+          'Kurzmitteilung an die verordnende Ärztin/den Arzt — MFS',
+      gruppe: 'Mitteilungen an den Arzt (Weil der Stadt)',
+      icon: Icons.mail_outline,
+      color: Color(0xFF2563EB),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/mitteilung_myo.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_mitteilung_ses',
+      titel: 'Mitteilung an Arzt: SES',
+      beschreibung:
+          'Kurzmitteilung an die verordnende Ärztin/den Arzt — SES',
+      gruppe: 'Mitteilungen an den Arzt (Weil der Stadt)',
+      icon: Icons.mail_outline,
+      color: Color(0xFF2563EB),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/mitteilung_ses.doc',
+      erweiterung: 'doc',
+    ),
+    Vordruck(
+      id: 'weil_mitteilung_sprachentwicklungsstoerung',
+      titel: 'Mitteilung an Arzt: Sprachentwicklungsstörung',
+      beschreibung:
+          'Kurzmitteilung an die verordnende Ärztin/den Arzt — SES',
+      gruppe: 'Mitteilungen an den Arzt (Weil der Stadt)',
+      icon: Icons.mail_outline,
+      color: Color(0xFF2563EB),
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/mitteilung_sprachentwicklungsstoerung.doc',
+      erweiterung: 'doc',
+    ),
+
+    // ── Briefpapier (Weil der Stadt) ─────────────────────────────
+    Vordruck(
+      id: 'weil_briefpapier_wds',
+      titel: 'Briefpapier Weil der Stadt',
+      beschreibung:
+          'Leeres Praxis-Briefpapier zum freien Beschriften',
+      gruppe: 'Briefpapier (Weil der Stadt)',
+      icon: Icons.description_outlined,
+      color: AppTheme.slate600,
+      sichtbarFuerPraxisStichwort: 'weil',
+      assetPfad: 'assets/vordrucke/menauer/weil/briefpapier_wds.doc',
+      erweiterung: 'doc',
+    ),
   ];
 
   /// Sichtbare Vordrucke für die aktuelle Praxis.
@@ -120,8 +414,8 @@ class VordruckService {
   static Future<void> drucken(Vordruck v, Praxis? praxis) async {
     final bytes = await _loadBytes(v, praxis);
     final filename = _filenameFor(v, praxis);
-    if (v.erweiterung == 'docx') {
-      // Word-Dokumente werden heruntergeladen statt gedruckt
+    if (v.istWord) {
+      // Word-Dokumente (doc/docx) werden heruntergeladen statt gedruckt
       await pdfPlatform.sharePdf(bytes, filename);
     } else {
       await pdfPlatform.showPdf(bytes, filename);
