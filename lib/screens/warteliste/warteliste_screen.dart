@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/strings.dart';
 import '../../models/patient.dart';
 import '../../providers/patienten_provider.dart';
-import '../../utils/constants.dart';
+import '../../providers/standort_provider.dart';
 import '../../utils/theme.dart';
 import '../../widgets/patient_card.dart';
 
@@ -569,7 +569,7 @@ class _FilterChipsRow extends ConsumerWidget {
       context: context,
       builder: (context) => _BottomSheetList(
         title: 'Stoerungsbild waehlen',
-        items: AppConstants.stoerungsbilder,
+        items: ref.read(effektiveStoerungsbilderProvider),
         selectedItem: ref.read(stoerungsbildFilterProvider),
         onSelected: (value) {
           ref.read(stoerungsbildFilterProvider.notifier).state = value;
@@ -588,7 +588,7 @@ class _FilterChipsRow extends ConsumerWidget {
       context: context,
       builder: (context) => _BottomSheetList(
         title: 'Versicherung waehlen',
-        items: AppConstants.versicherungsarten,
+        items: ref.read(effektiveKostentraegerProvider),
         selectedItem: ref.read(versicherungFilterProvider),
         onSelected: (value) {
           ref.read(versicherungFilterProvider.notifier).state = value;

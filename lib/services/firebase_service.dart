@@ -302,6 +302,36 @@ class FirebaseService {
     await _praxenRef.doc(praxis.id).update(praxis.toFirestore());
   }
 
+  // ── Praxis-eigene Diagnosen / Kostenträger (Admin-Selbstverwaltung) ──
+
+  /// Fügt der Praxis ein eigenes Störungsbild (Diagnose) hinzu.
+  Future<void> addCustomStoerungsbild(String praxisId, String wert) async {
+    await _praxenRef.doc(praxisId).update({
+      'customStoerungsbilder': FieldValue.arrayUnion([wert.trim()]),
+    });
+  }
+
+  /// Entfernt ein praxis-eigenes Störungsbild.
+  Future<void> removeCustomStoerungsbild(String praxisId, String wert) async {
+    await _praxenRef.doc(praxisId).update({
+      'customStoerungsbilder': FieldValue.arrayRemove([wert]),
+    });
+  }
+
+  /// Fügt der Praxis einen eigenen Kostenträger hinzu.
+  Future<void> addCustomKostentraeger(String praxisId, String wert) async {
+    await _praxenRef.doc(praxisId).update({
+      'customKostentraeger': FieldValue.arrayUnion([wert.trim()]),
+    });
+  }
+
+  /// Entfernt einen praxis-eigenen Kostenträger.
+  Future<void> removeCustomKostentraeger(String praxisId, String wert) async {
+    await _praxenRef.doc(praxisId).update({
+      'customKostentraeger': FieldValue.arrayRemove([wert]),
+    });
+  }
+
   // ============================================================
   // Multi-Standort
   // ============================================================

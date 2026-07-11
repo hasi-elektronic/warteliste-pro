@@ -10,6 +10,13 @@ class Praxis {
   final DateTime createdAt;
   final String createdBy;
 
+  /// Praxis-eigene Störungsbilder (Diagnosen), vom Admin selbst gepflegt.
+  /// Werden zu den Standard-Diagnosen (AppConstants.stoerungsbilder) ergänzt.
+  final List<String> customStoerungsbilder;
+
+  /// Praxis-eigene Kostenträger (Versicherungsarten), Admin-gepflegt.
+  final List<String> customKostentraeger;
+
   const Praxis({
     required this.id,
     required this.name,
@@ -19,6 +26,8 @@ class Praxis {
     this.email = '',
     required this.createdAt,
     this.createdBy = '',
+    this.customStoerungsbilder = const [],
+    this.customKostentraeger = const [],
   });
 
   factory Praxis.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -34,6 +43,11 @@ class Praxis {
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
       createdBy: data['createdBy'] as String? ?? '',
+      customStoerungsbilder:
+          (data['customStoerungsbilder'] as List?)?.cast<String>() ??
+              const [],
+      customKostentraeger:
+          (data['customKostentraeger'] as List?)?.cast<String>() ?? const [],
     );
   }
 
@@ -46,6 +60,8 @@ class Praxis {
       'email': email,
       'createdAt': Timestamp.fromDate(createdAt),
       if (createdBy.isNotEmpty) 'createdBy': createdBy,
+      'customStoerungsbilder': customStoerungsbilder,
+      'customKostentraeger': customKostentraeger,
     };
   }
 
@@ -58,6 +74,8 @@ class Praxis {
     String? email,
     DateTime? createdAt,
     String? createdBy,
+    List<String>? customStoerungsbilder,
+    List<String>? customKostentraeger,
   }) {
     return Praxis(
       id: id ?? this.id,
@@ -68,6 +86,9 @@ class Praxis {
       email: email ?? this.email,
       createdAt: createdAt ?? this.createdAt,
       createdBy: createdBy ?? this.createdBy,
+      customStoerungsbilder:
+          customStoerungsbilder ?? this.customStoerungsbilder,
+      customKostentraeger: customKostentraeger ?? this.customKostentraeger,
     );
   }
 

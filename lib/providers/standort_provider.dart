@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/praxis.dart';
 import '../services/firebase_service.dart';
+import '../utils/constants.dart';
 import 'patienten_provider.dart';
 
 /// Provider fuer die Liste aller Standorte des Nutzers.
@@ -76,4 +77,37 @@ final hatMehrereStandorteProvider = Provider<bool>((ref) {
         data: (list) => list.length > 1,
       ) ??
       false;
+});
+
+/// Merge-Helfer: Standardliste + Praxis-eigene Werte, ohne Duplikate,
+/// Reihenfolge = Standard zuerst, dann Custom.
+List<String> _mergeUnique(List<String> defaults, List<String> custom) {
+  final seen = <String>{};
+  final out = <String>[];
+  for (final v in [...defaults, ...custom]) {
+    final t = v.trim();
+    if (t.isEmpty) continue;
+    final key = t.toLowerCase();
+    if (seen.add(key)) out.add(t);
+  }
+  return out;
+}
+
+/// Effektive Störungsbild-Liste (Standard + Praxis-eigene Diagnosen).
+/// Diese Liste speist sowohl das Patient-Formular als auch die Filter.
+final effektiveStoerungsbilderProvider = Provider<List<String>>((ref) {
+  final praxis = ref.watch(aktivesPraxisProvider);
+  return _mergeUnique(
+    AppConstants.stoerungsbilder,
+    praxis?.customStoerungsbilder ?? const [],
+  );
+});
+
+/// Effektive Kostenträger-Liste (Standard + Praxis-eigene).
+final effektiveKostentraegerProvider = Provider<List<String>>((ref) {
+  final praxis = ref.watch(aktivesPraxisProvider);
+  return _mergeUnique(
+    AppConstants.versicherungsarten,
+    praxis?.customKostentraeger ?? const [],
+  );
 });

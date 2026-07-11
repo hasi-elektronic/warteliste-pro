@@ -6,6 +6,7 @@ import '../../l10n/strings.dart';
 import '../../models/patient.dart';
 import '../../models/therapeut.dart';
 import '../../providers/patienten_provider.dart';
+import '../../providers/standort_provider.dart';
 import '../../utils/constants.dart';
 import '../../utils/theme.dart';
 import '../../widgets/app_header.dart';
@@ -89,10 +90,15 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
     // Therapeuten laden (async)
     _loadTherapeuten();
 
-    // Stoerungsbild: wenn vorhandener Wert nicht in der Liste ist,
-    // als "Sonstige" behandeln.
+    // Stoerungsbild: wenn vorhandener Wert nicht in der Liste ist
+    // (weder Standard noch Praxis-eigene Diagnose), als "Sonstige" behandeln.
     if (p != null && p.stoerungsbild.isNotEmpty) {
-      if (AppConstants.stoerungsbilder.contains(p.stoerungsbild)) {
+      final praxis = ref.read(aktivesPraxisProvider);
+      final bekannt = {
+        ...AppConstants.stoerungsbilder,
+        ...?praxis?.customStoerungsbilder,
+      };
+      if (bekannt.contains(p.stoerungsbild)) {
         _stoerungsbild = p.stoerungsbild;
       } else {
         _stoerungsbild = '_sonstige';
@@ -368,12 +374,31 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
     }
   }
 
+  /// Zeigt für die bekannten Standard-Kürzel einen ausgeschriebenen Namen,
+  /// für praxis-eigene Kostenträger den Wert selbst.
+  String _kostentraegerLabel(String k, bool isDe) {
+    switch (k) {
+      case 'KK':
+        return isDe ? 'Krankenkasse (KK)' : 'Public (KK)';
+      case 'Privat':
+        return isDe ? 'Privat' : 'Private';
+      case 'Jugendamt':
+        return isDe ? 'Jugendamt' : 'Youth Office';
+      case 'Sonstiges':
+        return isDe ? 'Sonstiges' : 'Other';
+      default:
+        return k;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('dd.MM.yyyy');
     final s = S.of(context);
     final isDe = s.isGerman;
+    final stoerungsbilder = ref.watch(effektiveStoerungsbilderProvider);
+    final kostentraeger = ref.watch(effektiveKostentraegerProvider);
 
     return Scaffold(
       appBar: AppHeader(
@@ -530,7 +555,7 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                 prefixIcon: const Icon(Icons.medical_services_outlined),
               ),
               items: [
-                ...AppConstants.stoerungsbilder.map(
+                ...stoerungsbilder.map(
                   (st) => DropdownMenuItem(value: st, child: Text(st)),
                 ),
                 DropdownMenuItem(
@@ -561,38 +586,23 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
             ],
             const SizedBox(height: 12),
 
-            // Versicherung
-            Text(
-              s.labelVersicherung,
-              style: theme.textTheme.labelLarge,
-            ),
-            const SizedBox(height: 8),
-            SegmentedButton<String>(
-              segments: [
-                ButtonSegment(
-                  value: 'KK',
-                  label: Text(isDe ? 'Krankenkasse' : 'Public'),
-                  icon: const Icon(Icons.account_balance_outlined, size: 16),
-                ),
-                ButtonSegment(
-                  value: 'Privat',
-                  label: Text(isDe ? 'Privat' : 'Private'),
-                  icon: const Icon(Icons.shield_outlined, size: 16),
-                ),
-                ButtonSegment(
-                  value: AppConstants.versicherungJugendamt,
-                  label: Text(isDe ? 'Jugendamt' : 'Youth Office'),
-                  icon: const Icon(Icons.family_restroom_outlined, size: 16),
-                ),
-                ButtonSegment(
-                  value: AppConstants.versicherungSonstiges,
-                  label: Text(isDe ? 'Sonstiges' : 'Other'),
-                  icon: const Icon(Icons.more_horiz, size: 16),
-                ),
-              ],
-              selected: {_versicherung},
-              onSelectionChanged: (selection) {
-                setState(() => _versicherung = selection.first);
+            // Versicherung / Kostenträger
+            DropdownButtonFormField<String>(
+              value: kostentraeger.contains(_versicherung)
+                  ? _versicherung
+                  : (kostentraeger.isNotEmpty ? kostentraeger.first : null),
+              decoration: InputDecoration(
+                labelText: s.labelVersicherung,
+                prefixIcon: const Icon(Icons.account_balance_outlined),
+              ),
+              items: kostentraeger
+                  .map((k) => DropdownMenuItem(
+                        value: k,
+                        child: Text(_kostentraegerLabel(k, isDe)),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) setState(() => _versicherung = value);
               },
             ),
             if (_versicherung == AppConstants.versicherungSonstiges) ...[

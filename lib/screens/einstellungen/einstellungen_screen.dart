@@ -14,6 +14,7 @@ import '../../providers/standort_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/excel_service.dart';
 import '../../services/export_service.dart';
+import '../../utils/constants.dart';
 import '../../utils/theme.dart';
 
 /// Einstellungen-Screen mit Praxis-Profil, Therapeuten-Verwaltung,
@@ -457,6 +458,18 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                     Icons.group_rounded,
                   ),
                   _buildMitarbeiterCard(s),
+                  const SizedBox(height: 8),
+                ],
+
+                // ── Diagnosen & Kostenträger (nur Admin) ──
+                if (isAdmin) ...[
+                  _buildSectionHeader(
+                    s.isGerman
+                        ? 'Diagnosen & Kostenträger'
+                        : 'Diagnoses & Payers',
+                    Icons.medical_information_rounded,
+                  ),
+                  _buildListenVerwaltungCard(s),
                   const SizedBox(height: 8),
                 ],
 
@@ -1070,6 +1083,210 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
   // ──────────────────────────────────────────────
   // Therapeuten Card
   // ──────────────────────────────────────────────
+
+  // ──────────────────────────────────────────────
+  // Diagnosen & Kostenträger — Admin-Selbstverwaltung
+  // ──────────────────────────────────────────────
+
+  Future<void> _addCustomWert({
+    required bool istDiagnose,
+    required bool isGerman,
+  }) async {
+    final praxis = ref.read(aktivesPraxisProvider);
+    if (praxis == null) return;
+    final controller = TextEditingController();
+    final titel = istDiagnose
+        ? (isGerman ? 'Diagnose hinzufügen' : 'Add diagnosis')
+        : (isGerman ? 'Kostenträger hinzufügen' : 'Add payer');
+
+    final wert = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(titel),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(
+            labelText: istDiagnose
+                ? (isGerman ? 'Bezeichnung' : 'Name')
+                : (isGerman ? 'Bezeichnung' : 'Name'),
+            hintText: istDiagnose ? 'z.B. LRS, Dyskalkulie' : 'z.B. BG, PBeaKK',
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(isGerman ? 'Abbrechen' : 'Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: Text(isGerman ? 'Hinzufügen' : 'Add'),
+          ),
+        ],
+      ),
+    );
+
+    if (wert == null || wert.isEmpty) return;
+    try {
+      final service = ref.read(firebaseServiceProvider);
+      if (istDiagnose) {
+        await service.addCustomStoerungsbild(praxis.id, wert);
+      } else {
+        await service.addCustomKostentraeger(praxis.id, wert);
+      }
+      await ref.read(standorteProvider.notifier).load();
+      if (mounted) {
+        _showSnackBar(isGerman ? '"$wert" hinzugefügt' : '"$wert" added');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar(
+          isGerman ? 'Fehler: $e' : 'Error: $e',
+          isError: true,
+        );
+      }
+    }
+  }
+
+  Future<void> _removeCustomWert({
+    required bool istDiagnose,
+    required String wert,
+    required bool isGerman,
+  }) async {
+    final praxis = ref.read(aktivesPraxisProvider);
+    if (praxis == null) return;
+    try {
+      final service = ref.read(firebaseServiceProvider);
+      if (istDiagnose) {
+        await service.removeCustomStoerungsbild(praxis.id, wert);
+      } else {
+        await service.removeCustomKostentraeger(praxis.id, wert);
+      }
+      await ref.read(standorteProvider.notifier).load();
+      if (mounted) {
+        _showSnackBar(isGerman ? '"$wert" entfernt' : '"$wert" removed');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar(isGerman ? 'Fehler: $e' : 'Error: $e', isError: true);
+      }
+    }
+  }
+
+  Widget _buildListenVerwaltungCard(S s) {
+    final praxis = ref.watch(aktivesPraxisProvider);
+    final isGerman = s.isGerman;
+    final customDiagnosen = praxis?.customStoerungsbilder ?? const [];
+    final customKostentraeger = praxis?.customKostentraeger ?? const [];
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isGerman
+                  ? 'Eigene Einträge gelten nur für diesen Standort und '
+                      'erscheinen sofort im Patienten-Formular und in den Filtern.'
+                  : 'Custom entries apply only to this location and appear '
+                      'immediately in the patient form and filters.',
+              style: TextStyle(fontSize: 12.5, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Diagnosen ──
+            _buildListenBlock(
+              titel: isGerman ? 'Diagnosen (Störungsbilder)' : 'Diagnoses',
+              standard: AppConstants.stoerungsbilder,
+              custom: customDiagnosen,
+              onAdd: () => _addCustomWert(istDiagnose: true, isGerman: isGerman),
+              onRemove: (w) => _removeCustomWert(
+                  istDiagnose: true, wert: w, isGerman: isGerman),
+              isGerman: isGerman,
+            ),
+            const Divider(height: 28),
+
+            // ── Kostenträger ──
+            _buildListenBlock(
+              titel: isGerman ? 'Kostenträger' : 'Payers',
+              standard: AppConstants.versicherungsarten,
+              custom: customKostentraeger,
+              onAdd:
+                  () => _addCustomWert(istDiagnose: false, isGerman: isGerman),
+              onRemove: (w) => _removeCustomWert(
+                  istDiagnose: false, wert: w, isGerman: isGerman),
+              isGerman: isGerman,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListenBlock({
+    required String titel,
+    required List<String> standard,
+    required List<String> custom,
+    required VoidCallback onAdd,
+    required void Function(String) onRemove,
+    required bool isGerman,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                titel,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w600, fontSize: 15),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: onAdd,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(isGerman ? 'Hinzufügen' : 'Add'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            // Standard-Einträge (nicht entfernbar)
+            ...standard.map((w) => Chip(
+                  label: Text(w),
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor: Colors.grey.shade100,
+                  labelStyle:
+                      TextStyle(fontSize: 12.5, color: Colors.grey.shade700),
+                  side: BorderSide(color: Colors.grey.shade300),
+                )),
+            // Praxis-eigene Einträge (entfernbar)
+            ...custom.map((w) => Chip(
+                  label: Text(w),
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  labelStyle: TextStyle(
+                      fontSize: 12.5,
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.w600),
+                  side: BorderSide(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.4)),
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  onDeleted: () => onRemove(w),
+                )),
+          ],
+        ),
+      ],
+    );
+  }
 
   Widget _buildTherapeutenCard(S s) {
     return Card(
