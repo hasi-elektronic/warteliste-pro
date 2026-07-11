@@ -31,7 +31,20 @@ class BerichtFormArgs {
   /// Vorgewaehlte Kategorie.
   final BerichtKategorie? kategorie;
 
-  const BerichtFormArgs({this.bericht, this.patient, this.kategorie});
+  /// Vorbelegter Titel (z.B. aus einer Weil-Vorlage).
+  final String? vorlageTitel;
+
+  /// Vorbelegter Fließtext-Koerper (Plain Text) aus einer Vorlage.
+  /// Wird als bearbeitbarer Entwurf in den Editor geladen.
+  final String? vorlageText;
+
+  const BerichtFormArgs({
+    this.bericht,
+    this.patient,
+    this.kategorie,
+    this.vorlageTitel,
+    this.vorlageText,
+  });
 }
 
 class BerichtFormScreen extends ConsumerStatefulWidget {
@@ -64,7 +77,8 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
   void initState() {
     super.initState();
     final b = widget.args.bericht;
-    _titelCtrl = TextEditingController(text: b?.titel ?? '');
+    _titelCtrl = TextEditingController(
+        text: b?.titel ?? widget.args.vorlageTitel ?? '');
 
     // Default immer Allgemein — User soll bewusst eine Vorlage waehlen.
     final defaultKategorie =
@@ -76,9 +90,15 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
     _briefDatum = b?.briefDatum;
     _berichtId = (b?.id.isNotEmpty ?? false) ? b!.id : const Uuid().v4();
 
-    _initialInhalt = b?.inhalt ?? defaultKategorie.vorlage;
-    _aktuelleDeltaJson = _initialInhalt;
-    _aktuellerPlaintext = b?.inhaltText ?? defaultKategorie.vorlage;
+    // Prioritaet des Startinhalts: bestehender Bericht > Vorlage-Text >
+    // Kategorie-Standardvorlage.
+    final startInhalt =
+        b?.inhalt ?? widget.args.vorlageText ?? defaultKategorie.vorlage;
+    _initialInhalt = startInhalt;
+    _aktuelleDeltaJson = startInhalt;
+    _aktuellerPlaintext = b?.inhaltText ??
+        widget.args.vorlageText ??
+        defaultKategorie.vorlage;
   }
 
   @override

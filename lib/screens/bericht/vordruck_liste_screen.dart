@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../models/bericht.dart';
 import '../../models/praxis.dart';
 import '../../models/vordruck.dart';
+import '../../models/weil_vorlagen.dart';
 import '../../providers/standort_provider.dart';
 import '../../services/vordruck_service.dart';
 import '../../utils/theme.dart';
 import '../../widgets/app_header.dart';
+import 'bericht_form_screen.dart';
 
 /// Liste der offiziellen Vordrucke (PDF/DOCX) — Original-Dokumente,
 /// werden unverändert geliefert.
@@ -157,6 +160,26 @@ class _VordruckCardState extends State<_VordruckCard> {
     }
   }
 
+  /// Öffnet den Bericht-Editor mit dem Fließtext dieser Vorlage vorbelegt.
+  /// Der Patient wird im Formular ausgewählt; nach dem Speichern ist der
+  /// Bericht wie jeder andere bearbeitbar.
+  void _alsBerichtAusfuellen(BuildContext context) {
+    final vorlage = weilVorlageById(widget.vordruck.id);
+    if (vorlage == null) return;
+    final kategorie = BerichtKategorie.values.firstWhere(
+      (k) => k.name == vorlage.kategorie,
+      orElse: () => BerichtKategorie.verlaufsbericht,
+    );
+    Navigator.of(context).pushNamed(
+      '/bericht/neu',
+      arguments: BerichtFormArgs(
+        kategorie: kategorie,
+        vorlageTitel: vorlage.titel,
+        vorlageText: vorlage.body,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final v = widget.vordruck;
@@ -263,6 +286,22 @@ class _VordruckCardState extends State<_VordruckCard> {
                                 .pushNamed(v.ausfuellenRoute!),
                             icon: const Icon(Icons.edit_note, size: 16),
                             label: const Text('Ausfüllen'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: v.color,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              minimumSize: Size.zero,
+                              tapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              textStyle: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        // In-App als Bericht ausfüllen (Weil-Vorlagen)
+                        if (weilVorlageById(v.id) != null)
+                          FilledButton.icon(
+                            onPressed: () => _alsBerichtAusfuellen(context),
+                            icon: const Icon(Icons.edit_note, size: 16),
+                            label: const Text('Als Bericht ausfüllen'),
                             style: FilledButton.styleFrom(
                               backgroundColor: v.color,
                               padding: const EdgeInsets.symmetric(
