@@ -97,7 +97,7 @@ class PatientDetailScreen extends ConsumerWidget {
                       icon: const Icon(Icons.map_outlined, size: 20),
                       color: AppTheme.primaryColor,
                       onPressed: () => _launchMaps(livePatient.adresse),
-                      tooltip: 'Karte oeffnen',
+                      tooltip: 'Karte öffnen',
                     ),
                   ),
               ],
@@ -110,7 +110,7 @@ class PatientDetailScreen extends ConsumerWidget {
               icon: Icons.medical_information_outlined,
               children: [
                 _InfoTile(
-                  label: 'Stoerungsbild',
+                  label: 'Störungsbild',
                   value: livePatient.stoerungsbild.isNotEmpty
                       ? livePatient.stoerungsbild
                       : '---',
@@ -503,7 +503,7 @@ class _ActionButtons extends ConsumerWidget {
         FilledButton.icon(
           onPressed: () => _showStatusDialog(context, ref),
           icon: const Icon(Icons.swap_horiz),
-          label: const Text('Status aendern'),
+          label: const Text('Status ändern'),
         ),
         const SizedBox(height: 8),
 
@@ -542,7 +542,7 @@ class _ActionButtons extends ConsumerWidget {
         OutlinedButton.icon(
           onPressed: () => _confirmDelete(context, ref),
           icon: const Icon(Icons.delete_outline),
-          label: const Text('Loeschen'),
+          label: const Text('Löschen'),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppTheme.errorColor,
             side: const BorderSide(color: AppTheme.errorColor),
@@ -559,7 +559,7 @@ class _ActionButtons extends ConsumerWidget {
     final newStatus = await showDialog<PatientStatus>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('Status aendern'),
+        title: const Text('Status ändern'),
         children: PatientStatus.values.map((status) {
           return SimpleDialogOption(
             onPressed: () => Navigator.pop(context, status),
@@ -597,7 +597,7 @@ class _ActionButtons extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Status geaendert: ${newStatus.label}',
+              'Status geändert: ${newStatus.label}',
             ),
           ),
         );
@@ -612,11 +612,11 @@ class _ActionButtons extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Patient loeschen?'),
+        title: const Text('Patient löschen?'),
         content: Text(
-          'Moechten Sie ${patient.vollstaendigerName} wirklich '
+          'Möchten Sie ${patient.vollstaendigerName} wirklich '
           'von der Warteliste entfernen? '
-          'Diese Aktion kann nicht rueckgaengig gemacht werden.',
+          'Diese Aktion kann nicht rückgängig gemacht werden.',
         ),
         actions: [
           TextButton(
@@ -628,7 +628,7 @@ class _ActionButtons extends ConsumerWidget {
             style: FilledButton.styleFrom(
               backgroundColor: AppTheme.errorColor,
             ),
-            child: const Text('Loeschen'),
+            child: const Text('Löschen'),
           ),
         ],
       ),
@@ -641,7 +641,7 @@ class _ActionButtons extends ConsumerWidget {
         Navigator.of(context).pop(); // Zurueck zur Liste
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${patient.vollstaendigerName} geloescht'),
+            content: Text('${patient.vollstaendigerName} gelöscht'),
           ),
         );
       }
@@ -1387,14 +1387,14 @@ class _DokumenteSection extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Dokument loeschen?'),
-        content: Text('"${doc.name}" unwiderruflich loeschen?'),
+        title: const Text('Dokument löschen?'),
+        content: Text('"${doc.name}" unwiderruflich löschen?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Abbrechen')),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: AppTheme.errorColor),
-            child: const Text('Loeschen'),
+            child: const Text('Löschen'),
           ),
         ],
       ),

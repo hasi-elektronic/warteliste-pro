@@ -36,10 +36,10 @@ class AppConstants {
     'Aphasie',
     'Dysphonie',
     'Stottern',
-    'Myofunktionelle Stoerung',
+    'Myofunktionelle Störung',
     'Autismus',
     'Parkinson',
-    'Hoergeraet/CI',
+    'Hörgerät/CI',
     'Lispeln',
     'LRS',
     'Dyskalkulie',
@@ -97,7 +97,7 @@ class AppConstants {
   static const String labelTelefon = 'Telefon';
   static const String labelVersicherung = 'Versicherung';
   static const String labelArzt = 'Arzt';
-  static const String labelStoerungsbild = 'Stoerungsbild';
+  static const String labelStoerungsbild = 'Störungsbild';
   static const String labelTerminWunsch = 'Termin-Wunsch';
   static const String labelWeitereInfos = 'Weitere Infos';
   static const String labelGeburtsdatum = 'Geburtsdatum';
@@ -112,9 +112,9 @@ class AppConstants {
 
   static const String actionSpeichern = 'Speichern';
   static const String actionAbbrechen = 'Abbrechen';
-  static const String actionLoeschen = 'Loeschen';
+  static const String actionLoeschen = 'Löschen';
   static const String actionBearbeiten = 'Bearbeiten';
-  static const String actionHinzufuegen = 'Hinzufuegen';
+  static const String actionHinzufuegen = 'Hinzufügen';
   static const String actionImportieren = 'Importieren';
   static const String actionExportieren = 'Exportieren';
   static const String actionSuchen = 'Suchen';

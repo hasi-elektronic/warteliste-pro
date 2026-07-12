@@ -51,7 +51,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                       icon: const Icon(Icons.arrow_back, size: 20),
                       onPressed: () => Navigator.of(context).pop(),
                       color: AppTheme.slate700,
-                      tooltip: 'Zurueck',
+                      tooltip: 'Zurück',
                     )
                   else if (leading != null)
                     leading!,

@@ -67,9 +67,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else if (errorStr.contains('wrong-password')) {
         message = 'Falsches Passwort.';
       } else if (errorStr.contains('invalid-email')) {
-        message = 'Ungueltige E-Mail-Adresse.';
+        message = 'Ungültige E-Mail-Adresse.';
       } else if (errorStr.contains('too-many-requests')) {
-        message = 'Zu viele Versuche. Bitte spaeter erneut probieren.';
+        message = 'Zu viele Versuche. Bitte später erneut probieren.';
       } else if (errorStr.contains('network-request-failed')) {
         message = 'Keine Internetverbindung.';
       }
@@ -92,7 +92,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Passwort zuruecksetzen'),
+        title: const Text('Passwort zurücksetzen'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,7 +189,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Wartelisten-Verwaltung fuer Ihre Praxis',
+                    'Wartelisten-Verwaltung für Ihre Praxis',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppTheme.slate500,
@@ -211,7 +211,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         return 'Bitte E-Mail eingeben.';
                       }
                       if (!value.contains('@')) {
-                        return 'Bitte gueltige E-Mail eingeben.';
+                        return 'Bitte gültige E-Mail eingeben.';
                       }
                       return null;
                     },

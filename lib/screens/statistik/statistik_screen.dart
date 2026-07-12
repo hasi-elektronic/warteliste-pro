@@ -246,7 +246,7 @@ class _StatistikScreenState extends ConsumerState<StatistikScreen> {
 
               // ── 2. Stoerungsbild-Verteilung ──
               _ChartCard(
-                title: 'Stoerungsbild-Verteilung',
+                title: 'Störungsbild-Verteilung',
                 icon: Icons.pie_chart_rounded,
                 hint: 'Tippen zum Filtern',
                 child: DisorderPieChart(
@@ -550,7 +550,7 @@ class _WaitTimeCard extends StatelessWidget {
                           : avgDays > 90
                               ? 'Kritisch hoch'
                               : avgDays > 45
-                                  ? 'Erhoeht'
+                                  ? 'Erhöht'
                                   : 'Im Rahmen',
                       style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                     ),

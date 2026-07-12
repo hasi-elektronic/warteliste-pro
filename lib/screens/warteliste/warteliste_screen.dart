@@ -86,11 +86,11 @@ class _WartelisteScreenState extends ConsumerState<WartelisteScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Patient loeschen?'),
+        title: const Text('Patient löschen?'),
         content: Text(
-          'Moechten Sie ${patient.vollstaendigerName} wirklich '
+          'Möchten Sie ${patient.vollstaendigerName} wirklich '
           'von der Warteliste entfernen? '
-          'Diese Aktion kann nicht rueckgaengig gemacht werden.',
+          'Diese Aktion kann nicht rückgängig gemacht werden.',
         ),
         actions: [
           TextButton(
@@ -102,7 +102,7 @@ class _WartelisteScreenState extends ConsumerState<WartelisteScreen>
             style: FilledButton.styleFrom(
               backgroundColor: AppTheme.errorColor,
             ),
-            child: const Text('Loeschen'),
+            child: const Text('Löschen'),
           ),
         ],
       ),
@@ -114,7 +114,7 @@ class _WartelisteScreenState extends ConsumerState<WartelisteScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${patient.vollstaendigerName} geloescht'),
+            content: Text('${patient.vollstaendigerName} gelöscht'),
           ),
         );
       }
@@ -125,7 +125,7 @@ class _WartelisteScreenState extends ConsumerState<WartelisteScreen>
     final newStatus = await showDialog<PatientStatus>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('Status aendern'),
+        title: const Text('Status ändern'),
         children: PatientStatus.values.map((status) {
           return SimpleDialogOption(
             onPressed: () => Navigator.pop(context, status),
@@ -421,7 +421,7 @@ class _FilterChipsRow extends ConsumerWidget {
           // Stoerungsbild-Filter
           _buildFilterChip(
             context: context,
-            label: stoerungsbildFilter ?? 'Stoerungsbild',
+            label: stoerungsbildFilter ?? 'Störungsbild',
             isActive: stoerungsbildFilter != null,
             onTap: () => _showStoerungsbildPicker(context, ref),
           ),
@@ -490,7 +490,7 @@ class _FilterChipsRow extends ConsumerWidget {
               child: Row(
                 children: [
                   Text(
-                    'Therapeut waehlen',
+                    'Therapeut wählen',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -502,7 +502,7 @@ class _FilterChipsRow extends ConsumerWidget {
                         ref.read(therapeutFilterProvider.notifier).state = null;
                         Navigator.pop(context);
                       },
-                      child: const Text('Zuruecksetzen'),
+                      child: const Text('Zurücksetzen'),
                     ),
                 ],
               ),
@@ -568,7 +568,7 @@ class _FilterChipsRow extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       builder: (context) => _BottomSheetList(
-        title: 'Stoerungsbild waehlen',
+        title: 'Störungsbild wählen',
         items: ref.read(effektiveStoerungsbilderProvider),
         selectedItem: ref.read(stoerungsbildFilterProvider),
         onSelected: (value) {
@@ -587,7 +587,7 @@ class _FilterChipsRow extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       builder: (context) => _BottomSheetList(
-        title: 'Versicherung waehlen',
+        title: 'Versicherung wählen',
         items: ref.read(effektiveKostentraegerProvider),
         selectedItem: ref.read(versicherungFilterProvider),
         onSelected: (value) {
@@ -610,7 +610,7 @@ class _FilterChipsRow extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       builder: (context) => _BottomSheetList(
-        title: 'Jahr waehlen',
+        title: 'Jahr wählen',
         items: jahre,
         selectedItem: ref.read(jahrFilterProvider),
         onSelected: (value) {
@@ -636,7 +636,7 @@ class _FilterChipsRow extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       builder: (context) => _BottomSheetList(
-        title: 'Monat waehlen',
+        title: 'Monat wählen',
         items: monate,
         selectedItem: ref.read(monatFilterProvider),
         itemLabelBuilder: _formatMonat,
@@ -658,7 +658,7 @@ class _FilterChipsRow extends ConsumerWidget {
       final month = int.parse(parts[1]);
       final year = parts[0];
       final monthNames = [
-        'Januar', 'Februar', 'Maerz', 'April', 'Mai', 'Juni',
+        'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
         'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
       ];
       return '${monthNames[month - 1]} $year';
@@ -709,7 +709,7 @@ class _BottomSheetList extends StatelessWidget {
                 if (selectedItem != null)
                   TextButton(
                     onPressed: onClear,
-                    child: const Text('Zuruecksetzen'),
+                    child: const Text('Zurücksetzen'),
                   ),
               ],
             ),
@@ -816,7 +816,7 @@ class _PatientenListe extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Tippen Sie auf "+", um einen neuen Patienten hinzuzufuegen.',
+                    'Tippen Sie auf "+", um einen neuen Patienten hinzuzufügen.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Colors.grey.shade500,
                         ),
@@ -853,7 +853,7 @@ class _PatientenListe extends ConsumerWidget {
                   alignment: Alignment.centerRight,
                   color: AppTheme.errorColor,
                   icon: Icons.delete_outline,
-                  label: 'Loeschen',
+                  label: 'Löschen',
                 ),
                 confirmDismiss: (direction) async {
                   if (direction == DismissDirection.endToStart) {

@@ -321,9 +321,9 @@ class Patient {
       versicherung: getString(row, ['Versicherung', 'versicherung', 'Kasse']),
       arzt: getString(row, ['Arzt', 'arzt', 'Verordnender Arzt']),
       stoerungsbild: getString(row, [
+        'Störungsbild',
         'Stoerungsbild',
         'stoerungsbild',
-        'Störungsbild',
         'Diagnose',
       ]),
       terminWunsch: getString(row, [

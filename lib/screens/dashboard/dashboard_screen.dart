@@ -375,7 +375,7 @@ class _DashboardBody extends ConsumerWidget {
                             Text(
                               kritischWartend > 0
                                   ? '$kritischWartend kritisch (>180 Tage), ${langeWartend.length - kritischWartend} lang (>90 Tage)'
-                                  : '${langeWartend.length} Patienten warten ueber 90 Tage',
+                                  : '${langeWartend.length} Patienten warten über 90 Tage',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall

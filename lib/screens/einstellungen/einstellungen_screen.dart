@@ -189,7 +189,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
     final name = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Therapeut hinzufuegen'),
+        title: const Text('Therapeut hinzufügen'),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -207,7 +207,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(controller.text),
-            child: const Text('Hinzufuegen'),
+            child: const Text('Hinzufügen'),
           ),
         ],
       ),
@@ -231,13 +231,13 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
         praxisId: praxisId,
       );
       await ref.read(firebaseServiceProvider).addTherapeut(therapeut);
-      _showSnackBar('Therapeut hinzugefuegt');
+      _showSnackBar('Therapeut hinzugefügt');
       // Liste neu laden, falls Stream noch nicht aktiv ist.
       if (_therapeutenLoading) {
         await _loadTherapeuten();
       }
     } catch (e) {
-      _showSnackBar('Fehler beim Hinzufuegen: $e', isError: true);
+      _showSnackBar('Fehler beim Hinzufügen: $e', isError: true);
     }
   }
 
@@ -254,10 +254,10 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Therapeut loeschen?'),
+        title: const Text('Therapeut löschen?'),
         content: Text(
-          '${therapeut.name} wirklich loeschen? '
-          'Diese Aktion kann nicht rueckgaengig gemacht werden.',
+          '${therapeut.name} wirklich löschen? '
+          'Diese Aktion kann nicht rückgängig gemacht werden.',
         ),
         actions: [
           TextButton(
@@ -269,7 +269,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
               backgroundColor: AppTheme.errorColor,
             ),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Loeschen'),
+            child: const Text('Löschen'),
           ),
         ],
       ),
@@ -281,9 +281,9 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
       await ref
           .read(firebaseServiceProvider)
           .deleteTherapeut(therapeut.praxisId, therapeut.id);
-      _showSnackBar('Therapeut geloescht');
+      _showSnackBar('Therapeut gelöscht');
     } catch (e) {
-      _showSnackBar('Fehler beim Loeschen', isError: true);
+      _showSnackBar('Fehler beim Löschen', isError: true);
     }
   }
 
@@ -381,7 +381,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Abmelden?'),
-        content: const Text('Moechten Sie sich wirklich abmelden?'),
+        content: const Text('Möchten Sie sich wirklich abmelden?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -669,7 +669,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                   icon: const Icon(Icons.add),
                   label: Text(
                     isGerman
-                        ? 'Neuen Standort hinzufuegen'
+                        ? 'Neuen Standort hinzufügen'
                         : 'Add new location',
                   ),
                 ),
@@ -796,7 +796,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
             title: Text(isGerman ? 'System' : 'System'),
             subtitle: Text(
               isGerman
-                  ? 'Automatisch nach Geraeteeinstellung'
+                  ? 'Automatisch nach Geräteeinstellung'
                   : 'Follow device setting',
               style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
@@ -1609,7 +1609,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
               child: OutlinedButton.icon(
                 onPressed: _showChangePasswordDialog,
                 icon: const Icon(Icons.lock_outline_rounded),
-                label: const Text('Passwort aendern'),
+                label: const Text('Passwort ändern'),
               ),
             ),
             const SizedBox(height: 8),
@@ -1640,7 +1640,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: const Text('Passwort aendern'),
+          title: const Text('Passwort ändern'),
           content: SizedBox(
             width: 360,
             child: Column(
@@ -1680,7 +1680,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                   controller: confirmCtrl,
                   obscureText: obscure2,
                   decoration: const InputDecoration(
-                    labelText: 'Neues Passwort bestaetigen',
+                    labelText: 'Neues Passwort bestätigen',
                     prefixIcon: Icon(Icons.lock_reset_outlined),
                   ),
                 ),
@@ -1700,7 +1700,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                       final nw = newCtrl.text;
                       final cf = confirmCtrl.text;
                       if (cur.isEmpty || nw.isEmpty || cf.isEmpty) {
-                        _showSnackBar('Bitte alle Felder ausfuellen',
+                        _showSnackBar('Bitte alle Felder ausfüllen',
                             isError: true);
                         return;
                       }
@@ -1710,7 +1710,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                         return;
                       }
                       if (nw != cf) {
-                        _showSnackBar('Passwoerter stimmen nicht ueberein',
+                        _showSnackBar('Passwörter stimmen nicht überein',
                             isError: true);
                         return;
                       }
@@ -1724,7 +1724,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                             );
                         if (mounted) {
                           Navigator.of(ctx).pop();
-                          _showSnackBar('Passwort erfolgreich geaendert');
+                          _showSnackBar('Passwort erfolgreich geändert');
                         }
                       } catch (e) {
                         setLocal(() => busy = false);
@@ -1768,7 +1768,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
-            isGerman ? 'Kein Standort ausgewaehlt' : 'No location selected',
+            isGerman ? 'Kein Standort ausgewählt' : 'No location selected',
             style: TextStyle(color: Colors.grey.shade600),
           ),
         ),
@@ -1917,7 +1917,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                                 if (mounted) setState(() {});
                                 _showSnackBar(
                                   isGerman
-                                      ? 'Rolle geaendert'
+                                      ? 'Rolle geändert'
                                       : 'Role changed',
                                 );
                               } else if (value == 'remove') {
@@ -2014,11 +2014,11 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                   _showSnackBar(
                     found
                         ? (isGerman
-                            ? '$email wurde hinzugefuegt'
+                            ? '$email wurde hinzugefügt'
                             : '$email has been added')
                         : (isGerman
-                            ? 'Einladung fuer $email gespeichert. '
-                              'Wird bei der Registrierung eingeloest.'
+                            ? 'Einladung für $email gespeichert. '
+                              'Wird bei der Registrierung eingelöst.'
                             : 'Invite saved for $email. '
                               'Will be redeemed on registration.'),
                   );

@@ -299,7 +299,7 @@ class S {
 
       // Notizen
       'notizenTitel': 'Notizen & Anrufe',
-      'notizHinzufuegen': 'Notiz hinzufuegen',
+      'notizHinzufuegen': 'Notiz hinzufügen',
       'anrufProtokollieren': 'Anruf protokollieren',
       'notizTypNotiz': 'Notiz',
       'notizTypAnruf': 'Anruf',
@@ -307,14 +307,14 @@ class S {
       'notizPlaceholder': 'Notiz eingeben...',
       'anrufPlaceholder': 'Ergebnis des Anrufs...',
       'notizKeine': 'Noch keine Notizen vorhanden',
-      'notizLoeschen': 'Notiz loeschen?',
-      'notizLoeschenBestaetigung': 'Diese Notiz unwiderruflich loeschen?',
+      'notizLoeschen': 'Notiz löschen?',
+      'notizLoeschenBestaetigung': 'Diese Notiz unwiderruflich löschen?',
       'notizGespeichert': 'Notiz gespeichert',
       'anrufGespeichert': 'Anruf protokolliert',
 
       // Standorte
       'standorteTitel': 'Standorte',
-      'standortHinzufuegen': 'Neuen Standort hinzufuegen',
+      'standortHinzufuegen': 'Neuen Standort hinzufügen',
       'standortWechseln': 'Standort wechseln',
       'standortName': 'Standort-Name',
       'standortEntfernen': 'Standort entfernen',

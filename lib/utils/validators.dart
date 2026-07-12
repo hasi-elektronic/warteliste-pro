@@ -36,7 +36,7 @@ class Validators {
     // Muss mindestens 6 Ziffern enthalten (ggf. mit + Prefix)
     final digitPattern = RegExp(r'^\+?\d{6,15}$');
     if (!digitPattern.hasMatch(cleaned)) {
-      return 'Bitte eine gueltige Telefonnummer eingeben';
+      return 'Bitte eine gültige Telefonnummer eingeben';
     }
 
     return null;
@@ -53,7 +53,7 @@ class Validators {
     );
 
     if (!emailPattern.hasMatch(value.trim())) {
-      return 'Bitte eine gueltige E-Mail-Adresse eingeben';
+      return 'Bitte eine gültige E-Mail-Adresse eingeben';
     }
 
     return null;

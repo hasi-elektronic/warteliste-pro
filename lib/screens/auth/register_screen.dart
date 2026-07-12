@@ -74,7 +74,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       } else if (errorStr.contains('weak-password')) {
         message = 'Das Passwort ist zu schwach. Mindestens 6 Zeichen.';
       } else if (errorStr.contains('invalid-email')) {
-        message = 'Ungueltige E-Mail-Adresse.';
+        message = 'Ungültige E-Mail-Adresse.';
       } else if (errorStr.contains('network-request-failed')) {
         message = 'Keine Internetverbindung.';
       }
@@ -154,7 +154,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         Expanded(
                           child: Text(
                             'Wurden Sie eingeladen? Tragen Sie einfach E-Mail '
-                            'und ein selbst gewaehltes Passwort ein — der '
+                            'und ein selbst gewähltes Passwort ein — der '
                             'Praxis-Name wird ignoriert und Sie kommen '
                             'automatisch in die richtige Praxis.',
                             style: TextStyle(
@@ -204,7 +204,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         return 'Bitte E-Mail eingeben.';
                       }
                       if (!value.contains('@')) {
-                        return 'Bitte gueltige E-Mail eingeben.';
+                        return 'Bitte gültige E-Mail eingeben.';
                       }
                       return null;
                     },
@@ -251,7 +251,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _handleRegister(),
                     decoration: InputDecoration(
-                      labelText: 'Passwort bestaetigen',
+                      labelText: 'Passwort bestätigen',
                       prefixIcon: const Icon(Icons.lock_outlined),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -268,10 +268,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Bitte Passwort bestaetigen.';
+                        return 'Bitte Passwort bestätigen.';
                       }
                       if (value != _passwordController.text) {
-                        return 'Passwoerter stimmen nicht ueberein.';
+                        return 'Passwörter stimmen nicht überein.';
                       }
                       return null;
                     },

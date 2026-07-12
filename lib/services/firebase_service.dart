@@ -221,7 +221,7 @@ class FirebaseService {
         code: 'no-invite-no-praxis-name',
         message:
             'Keine Einladung gefunden. Bitte einen Praxis-Namen eingeben, '
-            'wenn Sie eine neue Praxis anlegen moechten.',
+            'wenn Sie eine neue Praxis anlegen möchten.',
       );
     }
     final praxisDoc = _praxenRef.doc();
@@ -756,7 +756,7 @@ class FirebaseService {
       } catch (e) {
         // Wenn Update fehlschlaegt (Rule-Verletzung), Invite stehen lassen.
         // ignore: avoid_print
-        print('Invite konnte nicht eingeloest werden: $e');
+        print('Invite konnte nicht eingelöst werden: $e');
       }
     }
   }
