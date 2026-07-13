@@ -21,6 +21,10 @@ class AppUser {
   final List<String> praxisIds;
   final DateTime createdAt;
 
+  /// Wenn true: dem Nutzer wurde ein Passwort von uns voreingestellt.
+  /// Die App zeigt eine Sicherheits-Warnung und bittet, es selbst zu ändern.
+  final bool passwortAenderungEmpfohlen;
+
   const AppUser({
     required this.uid,
     required this.email,
@@ -29,6 +33,7 @@ class AppUser {
     required this.praxisId,
     required this.praxisIds,
     required this.createdAt,
+    this.passwortAenderungEmpfohlen = false,
   });
 
   bool get isAdmin => role == UserRole.admin;
@@ -49,6 +54,8 @@ class AppUser {
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
+      passwortAenderungEmpfohlen:
+          data['passwortAenderungEmpfohlen'] as bool? ?? false,
     );
   }
 

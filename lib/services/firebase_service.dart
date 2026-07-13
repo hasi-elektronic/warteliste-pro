@@ -277,6 +277,13 @@ class FirebaseService {
     );
     await user.reauthenticateWithCredential(cred);
     await user.updatePassword(newPassword);
+    // Sicherheits-Warnung entfernen — der Nutzer hat sein Passwort
+    // jetzt selbst gesetzt.
+    try {
+      await _usersRef.doc(user.uid).update({
+        'passwortAenderungEmpfohlen': false,
+      });
+    } catch (_) {}
   }
 
   // ============================================================

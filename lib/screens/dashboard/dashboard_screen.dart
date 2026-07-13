@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/strings.dart';
 import '../../models/patient.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/patienten_provider.dart';
 import '../../utils/theme.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/kpi_card.dart';
+import '../../widgets/passwort_aendern_dialog.dart';
 import '../../widgets/standort_switcher.dart';
 import '../warteliste/warteliste_screen.dart';
 import '../statistik/statistik_screen.dart';
@@ -235,6 +237,9 @@ class _DashboardBody extends ConsumerWidget {
             padding: EdgeInsets.only(bottom: 8),
             child: StandortSwitcher(),
           ),
+
+          // ── Sicherheits-Warnung: voreingestelltes Passwort ändern ──
+          _PasswortWarnung(),
 
           // ── KPI-Karten ──
           IntrinsicHeight(
@@ -1036,6 +1041,61 @@ class _QuickActionState extends State<_QuickAction> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Sicherheits-Warnung, wenn dem Nutzer ein Passwort voreingestellt wurde.
+/// Bittet, es selbst zu ändern. Verschwindet nach erfolgreicher Änderung.
+class _PasswortWarnung extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appUser = ref.watch(appUserProvider).valueOrNull;
+    if (appUser == null || !appUser.passwortAenderungEmpfohlen) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.warningColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.warningColor.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.shield_outlined, color: AppTheme.warningColor, size: 26),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Bitte ändern Sie Ihr Passwort',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Ihr Passwort wurde von uns voreingestellt. '
+                  'Aus Sicherheitsgründen sollten Sie ein eigenes wählen.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: () => showPasswortAendernDialog(context, ref),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppTheme.warningColor,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Ändern', style: TextStyle(fontSize: 13)),
+          ),
+        ],
       ),
     );
   }
