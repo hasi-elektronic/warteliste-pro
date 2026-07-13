@@ -369,8 +369,14 @@ class VordruckService {
   /// Sichtbare Vordrucke für die aktuelle Praxis.
   static List<Vordruck> visibleFor(Praxis? praxis) {
     final praxisName = praxis?.name.toLowerCase() ?? '';
+    // Demo-/Test-Standorte sehen ALLE Vordrucke — so kann man den
+    // Vorlagen→Bericht-Ablauf gefahrlos testen, ohne echte Daten zu
+    // beruehren.
+    final istTestStandort =
+        praxisName.contains('demo') || praxisName.contains('test');
     return all.where((v) {
       if (v.sichtbarFuerPraxisStichwort == null) return true;
+      if (istTestStandort) return true;
       return praxisName.contains(v.sichtbarFuerPraxisStichwort!);
     }).toList();
   }
