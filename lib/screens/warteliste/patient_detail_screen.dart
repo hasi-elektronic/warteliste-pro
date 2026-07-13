@@ -150,6 +150,14 @@ class PatientDetailScreen extends ConsumerWidget {
                     label: 'Weitere Infos',
                     value: livePatient.weitereInfos,
                   ),
+                if (livePatient.wiedervorlage != null)
+                  _InfoTile(
+                    label: 'Wiedervorlage',
+                    value: dateFormat.format(livePatient.wiedervorlage!) +
+                        (livePatient.wiedervorlageFaellig
+                            ? '  ⚠️ fällig'
+                            : ''),
+                  ),
               ],
             ),
             const SizedBox(height: 12),

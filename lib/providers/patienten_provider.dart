@@ -59,6 +59,13 @@ final monatFilterProvider = StateProvider<String?>((ref) => null);
 /// Ausgewaehlter Jahres-Filter (null = alle). Format: 'YYYY'.
 final jahrFilterProvider = StateProvider<String?>((ref) => null);
 
+/// Mehrfachauswahl-Modus der Warteliste aktiv?
+final auswahlModusProvider = StateProvider<bool>((ref) => false);
+
+/// IDs der aktuell ausgewaehlten Patienten (fuer Bulk-Aktionen).
+final ausgewaehltePatientenProvider =
+    StateProvider<Set<String>>((ref) => <String>{});
+
 /// Ausgewaehlter Prioritaets-Filter (null = alle).
 final prioritaetFilterProvider =
     StateProvider<PatientPrioritaet?>((ref) => null);

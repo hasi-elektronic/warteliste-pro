@@ -186,6 +186,11 @@ class _DashboardBody extends ConsumerWidget {
         .where((p) => p.kontaktUeberfaellig)
         .toList();
 
+    // Faellige Wiedervorlagen (heute oder ueberfaellig)
+    final wiedervorlagen = patienten
+        .where((p) => p.wiedervorlageFaellig)
+        .toList();
+
     // Durchschnittliche Wartezeit (nur wartende)
     final wartende = patienten
         .where((p) => p.status == PatientStatus.wartend)
@@ -455,6 +460,64 @@ class _DashboardBody extends ConsumerWidget {
               ),
             ),
           if (rezeptWarnungen.isNotEmpty) const SizedBox(height: 8),
+
+          // ── Faellige Wiedervorlagen ──
+          if (wiedervorlagen.isNotEmpty)
+            Card(
+              color: AppTheme.primaryColor.withValues(alpha: 0.06),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.25),
+                ),
+              ),
+              child: InkWell(
+                onTap: () => _openWarteliste(ref, 0),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Icon(Icons.event_repeat,
+                          color: AppTheme.primaryColor, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${wiedervorlagen.length} Wiedervorlage(n) fällig',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              wiedervorlagen
+                                  .take(3)
+                                  .map((p) => p.vollstaendigerName)
+                                  .join(', '),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: Colors.grey.shade700),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right, color: Colors.grey.shade400),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          if (wiedervorlagen.isNotEmpty) const SizedBox(height: 8),
 
           // ── Kontakt ueberfaellig ──
           if (kontaktUeberfaellig.isNotEmpty)

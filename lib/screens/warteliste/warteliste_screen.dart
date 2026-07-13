@@ -193,34 +193,60 @@ class _WartelisteScreenState extends ConsumerState<WartelisteScreen>
       }
     });
     final s = S.of(context);
+    final auswahlModus = ref.watch(auswahlModusProvider);
     return Column(
       children: [
-        // ── Suchleiste ──
+        // ── Suchleiste + Auswahl-Toggle ──
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: s.wartelistePatientSuchen,
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        ref.read(searchQueryProvider.notifier).state = '';
-                      },
-                    )
-                  : null,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: s.wartelistePatientSuchen,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              ref.read(searchQueryProvider.notifier).state = '';
+                            },
+                          )
+                        : null,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    ref.read(searchQueryProvider.notifier).state = value;
+                  },
+                ),
               ),
-            ),
-            onChanged: (value) {
-              ref.read(searchQueryProvider.notifier).state = value;
-            },
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: auswahlModus
+                    ? 'Auswahl beenden'
+                    : 'Mehrere auswählen',
+                onPressed: () {
+                  final neu = !auswahlModus;
+                  ref.read(auswahlModusProvider.notifier).state = neu;
+                  if (!neu) {
+                    ref.read(ausgewaehltePatientenProvider.notifier).state = {};
+                  }
+                },
+                icon: Icon(
+                  auswahlModus ? Icons.close : Icons.checklist_rtl,
+                  color: auswahlModus
+                      ? AppTheme.errorColor
+                      : AppTheme.primaryColor,
+                ),
+              ),
+            ],
           ),
         ),
 
@@ -348,8 +374,126 @@ class _WartelisteScreenState extends ConsumerState<WartelisteScreen>
             }).toList(),
           ),
         ),
+
+        // ── Bulk-Aktionsleiste ──
+        if (auswahlModus) _buildBulkBar(),
       ],
     );
+  }
+
+  Widget _buildBulkBar() {
+    final selected = ref.watch(ausgewaehltePatientenProvider);
+    return Material(
+      elevation: 8,
+      color: Colors.white,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Text('${selected.length} ausgewählt',
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: selected.isEmpty ? null : _bulkStatus,
+                icon: const Icon(Icons.swap_horiz, size: 18),
+                label: const Text('Status'),
+              ),
+              const SizedBox(width: 4),
+              TextButton.icon(
+                onPressed: selected.isEmpty ? null : _bulkDelete,
+                icon: Icon(Icons.delete_outline,
+                    size: 18, color: AppTheme.errorColor),
+                label: Text('Papierkorb',
+                    style: TextStyle(color: AppTheme.errorColor)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _bulkStatus() async {
+    final newStatus = await showDialog<PatientStatus>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Status für Auswahl ändern'),
+        children: PatientStatus.values.map((status) {
+          return SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, status),
+            child: Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: AppTheme.statusColor(status.label),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(status.label),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+    if (newStatus == null) return;
+    final ids = ref.read(ausgewaehltePatientenProvider);
+    final all = ref.read(patientenProvider).value ?? const [];
+    final service = ref.read(firebaseServiceProvider);
+    int n = 0;
+    for (final p in all.where((p) => ids.contains(p.id))) {
+      await service.updatePatientStatus(p.praxisId, p.id, newStatus);
+      n++;
+    }
+    ref.read(auswahlModusProvider.notifier).state = false;
+    ref.read(ausgewaehltePatientenProvider.notifier).state = {};
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$n Patienten → ${newStatus.label}')),
+      );
+    }
+  }
+
+  Future<void> _bulkDelete() async {
+    final ids = ref.read(ausgewaehltePatientenProvider);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('In den Papierkorb?'),
+        content: Text('${ids.length} Patienten in den Papierkorb '
+            'verschieben? Sie können sie dort wiederherstellen.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Verschieben'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final all = ref.read(patientenProvider).value ?? const [];
+    final service = ref.read(firebaseServiceProvider);
+    int n = 0;
+    for (final p in all.where((p) => ids.contains(p.id))) {
+      await service.deletePatient(p.praxisId, p.id);
+      n++;
+    }
+    ref.read(auswahlModusProvider.notifier).state = false;
+    ref.read(ausgewaehltePatientenProvider.notifier).state = {};
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$n Patienten in den Papierkorb verschoben')),
+      );
+    }
   }
 
   String _sortLabel(SortOption option, S s) {
@@ -847,6 +991,54 @@ class _PatientenListe extends ConsumerWidget {
             itemCount: patienten.length,
             itemBuilder: (context, index) {
               final patient = patienten[index];
+              final auswahlModus = ref.watch(auswahlModusProvider);
+              final ausgewaehlt = ref.watch(ausgewaehltePatientenProvider);
+
+              // Im Auswahl-Modus: Checkbox statt Swipe, Tap = auswaehlen.
+              if (auswahlModus) {
+                final selected = ausgewaehlt.contains(patient.id);
+                return Container(
+                  color: selected
+                      ? AppTheme.primaryColor.withValues(alpha: 0.08)
+                      : null,
+                  child: Row(
+                    children: [
+                      Checkbox(
+                        value: selected,
+                        onChanged: (_) {
+                          final set = {...ref.read(ausgewaehltePatientenProvider)};
+                          if (selected) {
+                            set.remove(patient.id);
+                          } else {
+                            set.add(patient.id);
+                          }
+                          ref.read(ausgewaehltePatientenProvider.notifier).state =
+                              set;
+                        },
+                      ),
+                      Expanded(
+                        child: PatientCard(
+                          patient: patient,
+                          onTap: () {
+                            final set = {
+                              ...ref.read(ausgewaehltePatientenProvider)
+                            };
+                            if (selected) {
+                              set.remove(patient.id);
+                            } else {
+                              set.add(patient.id);
+                            }
+                            ref
+                                .read(ausgewaehltePatientenProvider.notifier)
+                                .state = set;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
               return Dismissible(
                 key: ValueKey(patient.id),
                 background: _swipeBackground(

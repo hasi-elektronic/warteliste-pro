@@ -50,6 +50,7 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
   DateTime? _geburtsdatum;
   DateTime? _rezeptDatum;
   DateTime? _rezeptGueltigBis;
+  DateTime? _wiedervorlage;
   late PatientPrioritaet _prioritaet;
   bool _showSonstigeStoerung = false;
   bool _hausbesuch = false;
@@ -82,6 +83,7 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
     _anmeldung = p?.anmeldung ?? DateTime.now();
     _geburtsdatum = p?.geburtsdatum;
     _rezeptDatum = p?.rezeptDatum;
+    _wiedervorlage = p?.wiedervorlage;
     _rezeptGueltigBis = p?.rezeptGueltigBis;
     _prioritaet = p?.prioritaet ?? PatientPrioritaet.normal;
     _hausbesuch = p?.hausbesuch ?? false;
@@ -322,6 +324,9 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
           therapeutId: _therapeutId,
           clearTherapeutId: _therapeutId == null &&
               widget.patient!.therapeutId != null,
+          wiedervorlage: _wiedervorlage,
+          clearWiedervorlage: _wiedervorlage == null &&
+              widget.patient!.wiedervorlage != null,
         );
         await service.updatePatient(updated);
       } else {
@@ -348,6 +353,7 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
           hausbesuch: _hausbesuch,
           kkSonstiges: kkSonstiges,
           therapeutId: _therapeutId,
+          wiedervorlage: _wiedervorlage,
         );
         await service.addPatient(newPatient);
       }
@@ -733,6 +739,47 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
                 ),
               ),
             ],
+            const SizedBox(height: 24),
+
+            // ── Wiedervorlage (Follow-up) ──
+            _SectionHeader(title: 'Wiedervorlage'),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _wiedervorlage ??
+                      DateTime.now().add(const Duration(days: 14)),
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime.now().add(const Duration(days: 730)),
+                  helpText: 'Wiedervorlage-Datum wählen',
+                );
+                if (picked != null) setState(() => _wiedervorlage = picked);
+              },
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Wieder kontaktieren am',
+                  prefixIcon: const Icon(Icons.event_repeat_outlined),
+                  suffixIcon: _wiedervorlage != null
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () =>
+                              setState(() => _wiedervorlage = null),
+                        )
+                      : const Icon(Icons.calendar_today_outlined),
+                ),
+                child: Text(
+                  _wiedervorlage != null
+                      ? dateFormat.format(_wiedervorlage!)
+                      : 'Kein Datum (optional)',
+                  style: TextStyle(
+                    color: _wiedervorlage != null
+                        ? theme.textTheme.bodyLarge?.color
+                        : Colors.grey.shade500,
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
 
             // ── Rezept / Verordnung ──
