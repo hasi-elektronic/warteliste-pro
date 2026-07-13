@@ -1439,6 +1439,26 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Papierkorb
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () =>
+                    Navigator.of(context).pushNamed('/papierkorb'),
+                icon: const Icon(Icons.delete_outline_rounded),
+                label: Text(s.isGerman ? 'Papierkorb' : 'Trash'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              s.isGerman
+                  ? 'Geloeschte Patienten wiederherstellen oder endgueltig loeschen'
+                  : 'Restore or permanently delete removed patients',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
+            ),
+            const Divider(height: 24),
+
             // Backup
             SizedBox(
               width: double.infinity,
@@ -1665,7 +1685,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                   controller: newCtrl,
                   obscureText: obscure2,
                   decoration: InputDecoration(
-                    labelText: 'Neues Passwort (mind. 6 Zeichen)',
+                    labelText: 'Neues Passwort (mind. 8 Zeichen)',
                     prefixIcon: const Icon(Icons.lock_reset_outlined),
                     suffixIcon: IconButton(
                       icon: Icon(obscure2
@@ -1704,8 +1724,8 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                             isError: true);
                         return;
                       }
-                      if (nw.length < 6) {
-                        _showSnackBar('Neues Passwort min. 6 Zeichen',
+                      if (nw.length < 8) {
+                        _showSnackBar('Neues Passwort min. 8 Zeichen',
                             isError: true);
                         return;
                       }

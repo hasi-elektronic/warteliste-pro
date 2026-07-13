@@ -72,7 +72,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         message = 'Keine Einladung gefunden — bitte den Praxis-Namen '
             'eingeben, um eine neue Praxis anzulegen.';
       } else if (errorStr.contains('weak-password')) {
-        message = 'Das Passwort ist zu schwach. Mindestens 6 Zeichen.';
+        message = 'Das Passwort ist zu schwach. Mindestens 8 Zeichen.';
       } else if (errorStr.contains('invalid-email')) {
         message = 'Ungültige E-Mail-Adresse.';
       } else if (errorStr.contains('network-request-failed')) {
@@ -236,8 +236,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Bitte Passwort eingeben.';
                       }
-                      if (value.length < 6) {
-                        return 'Mindestens 6 Zeichen.';
+                      if (value.length < 8) {
+                        return 'Mindestens 8 Zeichen.';
                       }
                       return null;
                     },

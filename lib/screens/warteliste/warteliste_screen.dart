@@ -88,9 +88,9 @@ class _WartelisteScreenState extends ConsumerState<WartelisteScreen>
       builder: (context) => AlertDialog(
         title: const Text('Patient löschen?'),
         content: Text(
-          'Möchten Sie ${patient.vollstaendigerName} wirklich '
-          'von der Warteliste entfernen? '
-          'Diese Aktion kann nicht rückgängig gemacht werden.',
+          'Möchten Sie ${patient.vollstaendigerName} in den Papierkorb '
+          'verschieben? Sie können den Patienten dort jederzeit '
+          'wiederherstellen.',
         ),
         actions: [
           TextButton(
@@ -114,7 +114,13 @@ class _WartelisteScreenState extends ConsumerState<WartelisteScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${patient.vollstaendigerName} gelöscht'),
+            content: Text('${patient.vollstaendigerName} in den Papierkorb '
+                'verschoben'),
+            action: SnackBarAction(
+              label: 'Rückgängig',
+              onPressed: () => service.restorePatient(
+                  patient.praxisId, patient.id),
+            ),
           ),
         );
       }

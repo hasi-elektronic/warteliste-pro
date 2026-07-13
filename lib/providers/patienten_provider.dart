@@ -28,6 +28,16 @@ final patientenProvider = StreamProvider<List<Patient>>((ref) {
   return service.getPatienten(praxisId);
 });
 
+/// Echtzeit-Stream der Patienten im Papierkorb (soft-geloescht).
+final geloeschtePatientenProvider = StreamProvider<List<Patient>>((ref) {
+  final praxisId = ref.watch(praxisIdProvider);
+  if (praxisId == null || praxisId.isEmpty) {
+    return Stream.value([]);
+  }
+  final service = ref.watch(firebaseServiceProvider);
+  return service.getGeloeschtePatienten(praxisId);
+});
+
 /// Sortierung fuer die Warteliste.
 enum SortOption { datum, name, wartezeit, prioritaet }
 

@@ -105,6 +105,24 @@ class Patient {
   /// Freitext fuer 'Sonstiges' (z.B. BG, PBeaKK) wenn versicherung == 'Sonstiges'.
   final String kkSonstiges;
 
+  // ── Wiedervorlage (Follow-up) ──
+  /// Datum, an dem der Patient wieder kontaktiert werden soll.
+  final DateTime? wiedervorlage;
+
+  // ── Soft-Delete (Papierkorb) ──
+  /// Wenn gesetzt, gilt der Patient als geloescht (im Papierkorb) und
+  /// wird in der normalen Warteliste NICHT angezeigt.
+  final DateTime? geloeschtAm;
+
+  bool get istGeloescht => geloeschtAm != null;
+
+  /// Ob die Wiedervorlage faellig ist (heute oder ueberfaellig).
+  bool get wiedervorlageFaellig {
+    if (wiedervorlage == null) return false;
+    final heute = DateTime.now();
+    return !wiedervorlage!.isAfter(DateTime(heute.year, heute.month, heute.day, 23, 59));
+  }
+
   const Patient({
     required this.id,
     required this.anmeldung,
@@ -130,6 +148,8 @@ class Patient {
     this.prioritaet = PatientPrioritaet.normal,
     this.hausbesuch = false,
     this.kkSonstiges = '',
+    this.wiedervorlage,
+    this.geloeschtAm,
   });
 
   /// Tage bis Rezept ablaeuft (negativ = bereits abgelaufen).
@@ -215,6 +235,12 @@ class Patient {
           data['prioritaet'] as String? ?? 'normal'),
       hausbesuch: data['hausbesuch'] as bool? ?? false,
       kkSonstiges: data['kkSonstiges'] as String? ?? '',
+      wiedervorlage: data['wiedervorlage'] != null
+          ? (data['wiedervorlage'] as Timestamp).toDate()
+          : null,
+      geloeschtAm: data['geloeschtAm'] != null
+          ? (data['geloeschtAm'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -249,6 +275,10 @@ class Patient {
       'prioritaet': prioritaet.name,
       'hausbesuch': hausbesuch,
       'kkSonstiges': kkSonstiges,
+      'wiedervorlage':
+          wiedervorlage != null ? Timestamp.fromDate(wiedervorlage!) : null,
+      'geloeschtAm':
+          geloeschtAm != null ? Timestamp.fromDate(geloeschtAm!) : null,
     };
   }
 
@@ -380,6 +410,10 @@ class Patient {
     PatientPrioritaet? prioritaet,
     bool? hausbesuch,
     String? kkSonstiges,
+    DateTime? wiedervorlage,
+    bool clearWiedervorlage = false,
+    DateTime? geloeschtAm,
+    bool clearGeloeschtAm = false,
   }) {
     return Patient(
       id: id ?? this.id,
@@ -417,6 +451,9 @@ class Patient {
       prioritaet: prioritaet ?? this.prioritaet,
       hausbesuch: hausbesuch ?? this.hausbesuch,
       kkSonstiges: kkSonstiges ?? this.kkSonstiges,
+      wiedervorlage:
+          clearWiedervorlage ? null : (wiedervorlage ?? this.wiedervorlage),
+      geloeschtAm: clearGeloeschtAm ? null : (geloeschtAm ?? this.geloeschtAm),
     );
   }
 

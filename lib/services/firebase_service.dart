@@ -467,7 +467,22 @@ class FirebaseService {
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Patient.fromFirestore(doc))
+            // Soft-geloeschte Patienten (Papierkorb) hier ausblenden —
+            // sie tauchen nur im Papierkorb-Screen auf.
+            .where((p) => !p.istGeloescht)
             .toList());
+  }
+
+  /// Echtzeit-Stream der Patienten im Papierkorb (soft-geloescht).
+  Stream<List<Patient>> getGeloeschtePatienten(String praxisId) {
+    return _patientenRef(praxisId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Patient.fromFirestore(doc))
+            .where((p) => p.istGeloescht)
+            .toList()
+          ..sort((a, b) =>
+              (b.geloeschtAm ?? DateTime(0)).compareTo(a.geloeschtAm ?? DateTime(0))));
   }
 
   /// Echtzeit-Stream der Patienten nach Status gefiltert.
@@ -499,8 +514,25 @@ class FirebaseService {
         .update(patient.toFirestore());
   }
 
-  /// Loescht einen Patienten.
+  /// Verschiebt einen Patienten in den Papierkorb (Soft-Delete).
+  /// Der Patient bleibt in Firestore, wird aber aus der Warteliste
+  /// ausgeblendet und kann wiederhergestellt werden.
   Future<void> deletePatient(String praxisId, String patientId) async {
+    await _patientenRef(praxisId).doc(patientId).update({
+      'geloeschtAm': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Stellt einen Patienten aus dem Papierkorb wieder her.
+  Future<void> restorePatient(String praxisId, String patientId) async {
+    await _patientenRef(praxisId).doc(patientId).update({
+      'geloeschtAm': null,
+    });
+  }
+
+  /// Loescht einen Patienten ENDGUELTIG (aus dem Papierkorb).
+  Future<void> deletePatientPermanent(
+      String praxisId, String patientId) async {
     await _patientenRef(praxisId).doc(patientId).delete();
   }
 

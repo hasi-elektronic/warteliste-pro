@@ -11,6 +11,7 @@ import 'screens/bericht/verordnungsbericht_form_screen.dart';
 import 'screens/bericht/vordruck_liste_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/patient/patient_form_screen.dart';
+import 'screens/warteliste/papierkorb_screen.dart';
 import 'screens/warteliste/patient_detail_screen.dart';
 
 class AppRouter {
@@ -45,6 +46,10 @@ class AppRouter {
       case '/berichte':
         return MaterialPageRoute(
           builder: (_) => const BerichteListeScreen(),
+        );
+      case '/papierkorb':
+        return MaterialPageRoute(
+          builder: (_) => const PapierkorbScreen(),
         );
       case '/bericht/neu':
         final args = (settings.arguments as BerichtFormArgs?) ??
