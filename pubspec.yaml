@@ -1,7 +1,7 @@
 name: warteliste_pro
 description: "WarteListe Pro - Wartelisten-Management für Logopädie-Praxen"
 publish_to: 'none'
-version: 1.5.22+51
+version: 1.5.23+52
 
 environment:
   sdk: ^3.7.2
@@ -27,7 +27,6 @@ dependencies:
   intl: ^0.19.0
   url_launcher: ^6.3.1
   http: ^1.2.2
-  google_fonts: ^6.2.1
   uuid: ^4.5.1
   path_provider: ^2.1.5
   shared_preferences: ^2.3.3
@@ -48,3 +47,7 @@ flutter:
     - assets/vordrucke/
     - assets/vordrucke/menauer/
     - assets/vordrucke/menauer/weil/
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf

@@ -1,3 +1,35 @@
+# ── Cache-Regeln (Performance) ──────────────────────────────
+# CanvasKit-WASM (~7 MB) aendert sich nur mit der Flutter-SDK-Version,
+# nicht pro Deploy → sehr lange cachen. Spart bei jedem Wiederbesuch
+# den kompletten Re-Download.
+/canvaskit/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Assets (Vordrucke, Fonts, AssetManifest) — lange cachen.
+/assets/*
+  Cache-Control: public, max-age=2592000
+
+/icons/*
+  Cache-Control: public, max-age=2592000
+
+# Alle WASM-Dateien lange cachen.
+/*.wasm
+  Cache-Control: public, max-age=31536000, immutable
+
+# main.dart.js + flutter_bootstrap.js aendern sich pro Deploy und sind
+# NICHT hash-benannt → nur mit ETag revalidieren (schnelles 304 wenn
+# unveraendert, voller Download nur nach neuem Deploy). So vermeiden wir
+# veraltete JS-Bundles UND unnoetige 6-MB-Downloads bei jedem Besuch.
+/main.dart.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/flutter_bootstrap.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# ── Sicherheits-Header (fuer alle Pfade) ────────────────────
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// WarteListe Pro Theme — modernes professionelles SaaS-Design.
 /// Tiefes Teal als Brand, Slate-Palette fuer neutrale Flaechen,
@@ -84,7 +83,7 @@ class AppTheme {
 
   // Gemeinsame Schrift — Inter wirkt modern & professionell
   static TextTheme _textTheme(Color onSurface, Color onSurfaceVariant) {
-    final base = GoogleFonts.interTextTheme();
+    final base = ThemeData.light().textTheme.apply(fontFamily: 'Inter');
     return base.copyWith(
       displayLarge: base.displayLarge?.copyWith(color: onSurface, fontWeight: FontWeight.w700, letterSpacing: -0.5),
       displayMedium: base.displayMedium?.copyWith(color: onSurface, fontWeight: FontWeight.w700, letterSpacing: -0.5),
@@ -129,7 +128,7 @@ class AppTheme {
         backgroundColor: Colors.white,
         foregroundColor: slate900,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: TextStyle(fontFamily: 'Inter', 
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: slate900,
@@ -162,7 +161,7 @@ class AppTheme {
         foregroundColor: Colors.white,
         elevation: 2,
         highlightElevation: 4,
-        extendedTextStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+        extendedTextStyle: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600),
       ),
 
       // ElevatedButton — primary CTA
@@ -174,7 +173,7 @@ class AppTheme {
           disabledBackgroundColor: slate200,
           disabledForegroundColor: slate400,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0),
+          textStyle: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -195,7 +194,7 @@ class AppTheme {
           foregroundColor: slate700,
           side: const BorderSide(color: slate300, width: 1),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -217,7 +216,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryColor,
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
 
@@ -226,9 +225,9 @@ class AppTheme {
         filled: true,
         fillColor: Colors.white,
         hoverColor: slate50,
-        labelStyle: GoogleFonts.inter(color: slate700, fontSize: 14),
-        floatingLabelStyle: GoogleFonts.inter(color: primaryColor, fontSize: 14, fontWeight: FontWeight.w600),
-        hintStyle: GoogleFonts.inter(color: slate400, fontSize: 14),
+        labelStyle: TextStyle(fontFamily: 'Inter', color: slate700, fontSize: 14),
+        floatingLabelStyle: TextStyle(fontFamily: 'Inter', color: primaryColor, fontSize: 14, fontWeight: FontWeight.w600),
+        hintStyle: TextStyle(fontFamily: 'Inter', color: slate400, fontSize: 14),
         prefixIconColor: slate600,
         suffixIconColor: slate600,
         border: OutlineInputBorder(
@@ -259,8 +258,8 @@ class AppTheme {
         backgroundColor: slate200,
         selectedColor: primarySurface,
         disabledColor: slate100,
-        labelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: slate800),
-        secondaryLabelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: primaryDark),
+        labelStyle: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600, color: slate800),
+        secondaryLabelStyle: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w700, color: primaryDark),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         side: const BorderSide(color: slate300, width: 1),
         shape: RoundedRectangleBorder(
@@ -284,8 +283,8 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        titleTextStyle: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: slate900),
-        contentTextStyle: GoogleFonts.inter(fontSize: 14, color: slate700, height: 1.5),
+        titleTextStyle: TextStyle(fontFamily: 'Inter', fontSize: 18, fontWeight: FontWeight.w700, color: slate900),
+        contentTextStyle: TextStyle(fontFamily: 'Inter', fontSize: 14, color: slate700, height: 1.5),
       ),
 
       // BottomSheet
@@ -301,7 +300,7 @@ class AppTheme {
       // SnackBar
       snackBarTheme: SnackBarThemeData(
         backgroundColor: slate800,
-        contentTextStyle: GoogleFonts.inter(color: Colors.white, fontSize: 14),
+        contentTextStyle: TextStyle(fontFamily: 'Inter', color: Colors.white, fontSize: 14),
         actionTextColor: primaryLight,
         behavior: SnackBarBehavior.floating,
         elevation: 4,
@@ -316,8 +315,8 @@ class AppTheme {
         unselectedLabelColor: slate500,
         indicatorColor: primaryColor,
         indicatorSize: TabBarIndicatorSize.label,
-        labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
-        unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
+        labelStyle: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 14),
+        unselectedLabelStyle: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w500, fontSize: 14),
         dividerColor: borderColor,
         overlayColor: WidgetStateProperty.all(Colors.transparent),
       ),
@@ -333,7 +332,7 @@ class AppTheme {
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return GoogleFonts.inter(
+          return TextStyle(fontFamily: 'Inter', 
             fontSize: 12,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
             color: selected ? primaryColor : slate500,
@@ -388,7 +387,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(10),
           side: const BorderSide(color: borderColor, width: 1),
         ),
-        textStyle: GoogleFonts.inter(fontSize: 14, color: slate900),
+        textStyle: TextStyle(fontFamily: 'Inter', fontSize: 14, color: slate900),
       ),
 
       // Tooltip
@@ -397,7 +396,7 @@ class AppTheme {
           color: slate800,
           borderRadius: BorderRadius.circular(6),
         ),
-        textStyle: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+        textStyle: TextStyle(fontFamily: 'Inter', color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       ),
     );
@@ -450,7 +449,7 @@ class AppTheme {
         backgroundColor: const Color(0xFF111827),
         foregroundColor: slate100,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: TextStyle(fontFamily: 'Inter', 
           fontSize: 18, fontWeight: FontWeight.w700, color: slate100,
         ),
         iconTheme: const IconThemeData(color: slate300, size: 22),
@@ -481,7 +480,7 @@ class AppTheme {
           foregroundColor: slate900,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
@@ -502,9 +501,9 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFF111827),
-        labelStyle: GoogleFonts.inter(color: slate400, fontSize: 14),
-        floatingLabelStyle: GoogleFonts.inter(color: primaryLight, fontSize: 14, fontWeight: FontWeight.w500),
-        hintStyle: GoogleFonts.inter(color: slate500, fontSize: 14),
+        labelStyle: TextStyle(fontFamily: 'Inter', color: slate400, fontSize: 14),
+        floatingLabelStyle: TextStyle(fontFamily: 'Inter', color: primaryLight, fontSize: 14, fontWeight: FontWeight.w500),
+        hintStyle: TextStyle(fontFamily: 'Inter', color: slate500, fontSize: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Color(0xFF374151), width: 1),
@@ -526,7 +525,7 @@ class AppTheme {
 
       chipTheme: ChipThemeData(
         backgroundColor: const Color(0xFF1F2937),
-        labelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: slate200),
+        labelStyle: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w500, color: slate200),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         side: const BorderSide(color: Color(0xFF374151), width: 1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
@@ -550,7 +549,7 @@ class AppTheme {
 
       snackBarTheme: SnackBarThemeData(
         backgroundColor: slate100,
-        contentTextStyle: GoogleFonts.inter(color: slate900, fontSize: 14),
+        contentTextStyle: TextStyle(fontFamily: 'Inter', color: slate900, fontSize: 14),
         actionTextColor: primaryColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -561,7 +560,7 @@ class AppTheme {
         unselectedLabelColor: slate500,
         indicatorColor: primaryLight,
         indicatorSize: TabBarIndicatorSize.label,
-        labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+        labelStyle: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 14),
         dividerColor: const Color(0xFF1F2937),
       ),
 
@@ -595,7 +594,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(10),
           side: const BorderSide(color: Color(0xFF1F2937), width: 1),
         ),
-        textStyle: GoogleFonts.inter(fontSize: 14, color: slate100),
+        textStyle: TextStyle(fontFamily: 'Inter', fontSize: 14, color: slate100),
       ),
     );
   }
