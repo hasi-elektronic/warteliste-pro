@@ -4,6 +4,7 @@ import '../models/bericht.dart';
 import '../models/patient.dart';
 import '../models/patient_note.dart';
 import '../models/therapeut.dart';
+import '../models/arzt.dart';
 import '../services/bericht_service.dart';
 import '../services/firebase_service.dart';
 
@@ -78,6 +79,16 @@ final nurHausbesuchProvider = StateProvider<bool>((ref) => false);
 
 /// Therapeut-Filter (null = alle).
 final therapeutFilterProvider = StateProvider<String?>((ref) => null);
+
+/// Echtzeit-Stream der Aerzte (Adressbuch) der aktuellen Praxis.
+final aerzteProvider = StreamProvider<List<Arzt>>((ref) {
+  final praxisId = ref.watch(praxisIdProvider);
+  if (praxisId == null || praxisId.isEmpty) {
+    return Stream.value(const <Arzt>[]);
+  }
+  final service = ref.watch(firebaseServiceProvider);
+  return service.getAerzte(praxisId);
+});
 
 /// Echtzeit-Stream der Therapeuten der aktuellen Praxis.
 final therapeutenProvider = StreamProvider<List<Therapeut>>((ref) {

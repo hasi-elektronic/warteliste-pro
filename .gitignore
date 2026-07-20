@@ -61,3 +61,8 @@ r2-worker/node_modules/
 # Agent army raporları (operasyonel, her review'da yenilenir)
 _agent-reports/
 _release-logs/
+
+# Secrets (Cowork)
+android/app/google-services.json
+*.p8
+*service-account*.json

@@ -17,6 +17,14 @@ class Praxis {
   /// Praxis-eigene Kostenträger (Versicherungsarten), Admin-gepflegt.
   final List<String> customKostentraeger;
 
+  /// UIDs der Administratoren dieses Standorts.
+  ///
+  /// Quelle der Wahrheit fuer Admin-Zugriff: Ein Admin sieht seinen Standort
+  /// IMMER, auch wenn die praxisIds-Liste in seinem User-Dokument den Eintrag
+  /// verloren hat (z.B. versehentlich via "Standort entfernen"). Dadurch ist
+  /// der Zugriff fuer Admins nicht mehr verlierbar.
+  final List<String> admins;
+
   const Praxis({
     required this.id,
     required this.name,
@@ -28,7 +36,12 @@ class Praxis {
     this.createdBy = '',
     this.customStoerungsbilder = const [],
     this.customKostentraeger = const [],
+    this.admins = const [],
   });
+
+  /// Ob [uid] Administrator dieses Standorts ist (Admin-Liste oder Ersteller).
+  bool istAdmin(String uid) =>
+      uid.isNotEmpty && (admins.contains(uid) || createdBy == uid);
 
   factory Praxis.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
@@ -48,6 +61,7 @@ class Praxis {
               const [],
       customKostentraeger:
           (data['customKostentraeger'] as List?)?.cast<String>() ?? const [],
+      admins: (data['admins'] as List?)?.cast<String>() ?? const [],
     );
   }
 
@@ -62,6 +76,9 @@ class Praxis {
       if (createdBy.isNotEmpty) 'createdBy': createdBy,
       'customStoerungsbilder': customStoerungsbilder,
       'customKostentraeger': customKostentraeger,
+      // Nie mit einer leeren Liste ueberschreiben — sonst koennte ein Client,
+      // der die Praxis ohne admins-Feld geladen hat, alle Admins entfernen.
+      if (admins.isNotEmpty) 'admins': admins,
     };
   }
 
@@ -76,6 +93,7 @@ class Praxis {
     String? createdBy,
     List<String>? customStoerungsbilder,
     List<String>? customKostentraeger,
+    List<String>? admins,
   }) {
     return Praxis(
       id: id ?? this.id,
@@ -89,6 +107,7 @@ class Praxis {
       customStoerungsbilder:
           customStoerungsbilder ?? this.customStoerungsbilder,
       customKostentraeger: customKostentraeger ?? this.customKostentraeger,
+      admins: admins ?? this.admins,
     );
   }
 

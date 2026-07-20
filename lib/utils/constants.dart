@@ -82,6 +82,7 @@ class AppConstants {
   static const String collectionPatienten = 'patienten';
   static const String collectionPraxen = 'praxen';
   static const String collectionTherapeuten = 'therapeuten';
+  static const String collectionAerzte = 'aerzte';
   static const String collectionTermine = 'termine';
   static const String collectionUsers = 'users';
   static const String collectionNotes = 'notizen';

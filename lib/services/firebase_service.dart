@@ -6,6 +6,7 @@ import '../models/patient.dart';
 import '../models/patient_note.dart';
 import '../models/praxis.dart';
 import '../models/therapeut.dart';
+import '../models/arzt.dart';
 import '../models/termin.dart';
 import '../utils/constants.dart';
 
@@ -42,6 +43,9 @@ class FirebaseService {
       _praxenRef
           .doc(praxisId)
           .collection(AppConstants.collectionTherapeuten);
+
+  CollectionReference<Map<String, dynamic>> _aerzteRef(String praxisId) =>
+      _praxenRef.doc(praxisId).collection(AppConstants.collectionAerzte);
 
   CollectionReference<Map<String, dynamic>> _termineRef(String praxisId) =>
       _praxenRef
@@ -377,20 +381,40 @@ class FirebaseService {
   /// Faengt Fehler bei einzelnen Standorten ab (z.B. Permission-Denied
   /// bei veralteten Firestore-Regeln) und gibt nur die lesbaren zurueck.
   Future<List<Praxis>> getStandorte() async {
-    final ids = await currentPraxisIds;
-    if (ids.isEmpty) return [];
+    final user = currentUser;
+    if (user == null) return [];
 
-    final results = <Praxis>[];
-    for (final id in ids) {
+    final byId = <String, Praxis>{};
+
+    // 1) Standorte, in denen der Nutzer Admin ist (admins-Array am Praxis-Doc).
+    //    Diese sind NICHT verlierbar — auch wenn praxisIds den Eintrag verloren
+    //    hat (z.B. durch versehentliches "Standort entfernen").
+    try {
+      final adminSnap =
+          await _praxenRef.where('admins', arrayContains: user.uid).get();
+      for (final doc in adminSnap.docs) {
+        byId[doc.id] = Praxis.fromFirestore(doc);
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print('Admin-Standorte nicht ladbar: $e');
+    }
+
+    // 2) Zusaetzlich die Standorte aus users/{uid}.praxisIds (Mitarbeiter).
+    for (final id in await currentPraxisIds) {
+      if (byId.containsKey(id)) continue;
       try {
         final praxis = await getPraxis(id);
-        if (praxis != null) results.add(praxis);
+        if (praxis != null) byId[id] = praxis;
       } catch (e) {
         // Permission denied oder Netzwerkfehler — Standort ueberspringen
         // ignore: avoid_print
         print('Standort $id nicht ladbar: $e');
       }
     }
+
+    final results = byId.values.toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     return results;
   }
 
@@ -406,6 +430,9 @@ class FirebaseService {
       email: user.email ?? '',
       createdAt: DateTime.now(),
       createdBy: user.uid,
+      // Ersteller ist Admin des Standorts — damit ist der Zugriff nicht
+      // verlierbar (unabhaengig von praxisIds).
+      admins: [user.uid],
     );
     await praxisDoc.set(praxis.toFirestore());
 
@@ -413,6 +440,7 @@ class FirebaseService {
     await _usersRef.doc(user.uid).update({
       'praxisIds': FieldValue.arrayUnion([praxisDoc.id]),
     });
+    await _indexMitarbeiter(praxisDoc.id);
 
     return praxis;
   }
@@ -621,6 +649,32 @@ class FirebaseService {
     await _therapeutenRef(praxisId).doc(therapeutId).delete();
   }
 
+  // ============================================================
+  // Aerzte (Adressbuch)
+  // ============================================================
+
+  /// Echtzeit-Stream aller Aerzte einer Praxis (alphabetisch nach Name).
+  Stream<List<Arzt>> getAerzte(String praxisId) {
+    return _aerzteRef(praxisId).orderBy('name').snapshots().map(
+        (snapshot) => snapshot.docs.map((doc) => Arzt.fromFirestore(doc)).toList());
+  }
+
+  /// Fuegt einen neuen Arzt hinzu.
+  Future<String> addArzt(Arzt arzt) async {
+    final doc = await _aerzteRef(arzt.praxisId).add(arzt.toFirestore());
+    return doc.id;
+  }
+
+  /// Aktualisiert einen bestehenden Arzt.
+  Future<void> updateArzt(Arzt arzt) async {
+    await _aerzteRef(arzt.praxisId).doc(arzt.id).update(arzt.toFirestore());
+  }
+
+  /// Loescht einen Arzt.
+  Future<void> deleteArzt(String praxisId, String arztId) async {
+    await _aerzteRef(praxisId).doc(arztId).delete();
+  }
+
   /// Zaehlt die aktiven Patienten pro Therapeut (status: wartend, platzGefunden, inBehandlung).
   Future<Map<String, int>> getTherapeutAuslastung(String praxisId) async {
     final snapshot = await _patientenRef(praxisId).get();
@@ -729,15 +783,43 @@ class FirebaseService {
 
   /// Laedt alle Mitarbeiter (User-Dokumente), die Zugriff auf eine
   /// bestimmte Praxis haben.
+  /// Mitarbeiter-Index eines Standorts: /praxen/{praxisId}/mitarbeiter/{uid}
+  CollectionReference<Map<String, dynamic>> _mitarbeiterRef(String praxisId) =>
+      _praxenRef.doc(praxisId).collection('mitarbeiter');
+
   Future<List<AppUser>> getMitarbeiter(String praxisId) async {
-    final snapshot = await _usersRef
-        .where('praxisIds', arrayContains: praxisId)
-        .get();
+    // Gelesen wird der Mitarbeiter-Index, NICHT die users-Collection:
+    // Bei einer Query (`list`) ist `resource` in den Firestore-Rules null,
+    // eine Regel wie "users lesen, wenn ich Admin seines Standorts bin" ist
+    // dort nicht auswertbar. Der Index haengt nur am Pfad (praxisId).
+    final snapshot = await _mitarbeiterRef(praxisId).get();
 
     return snapshot.docs
-        .map((doc) => AppUser.fromFirestore(doc))
+        .map((doc) => AppUser.fromMitarbeiterIndex(doc, praxisId))
         .toList()
       ..sort((a, b) => a.email.compareTo(b.email));
+  }
+
+  /// Traegt den aktuellen Nutzer in den Mitarbeiter-Index eines Standorts ein
+  /// (idempotent). Fehler werden geschluckt — der Index ist nur fuer die
+  /// Anzeige, der echte Zugriff haengt an users/{uid}.praxisIds.
+  Future<void> _indexMitarbeiter(String praxisId, {String? uid}) async {
+    final user = currentUser;
+    if (user == null) return;
+    final zielUid = uid ?? user.uid;
+    try {
+      final userDoc = await _usersRef.doc(zielUid).get();
+      final data = userDoc.data() ?? const <String, dynamic>{};
+      await _mitarbeiterRef(praxisId).doc(zielUid).set({
+        'email': data['email'] ?? user.email ?? '',
+        'displayName': data['displayName'] ?? '',
+        'role': data['role'] ?? 'user',
+        'joinedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      // ignore: avoid_print
+      print('Mitarbeiter-Index nicht schreibbar ($praxisId): $e');
+    }
   }
 
   /// Deterministische Invite-Dokument-ID fuer (email, praxisId).
@@ -790,7 +872,9 @@ class FirebaseService {
         await _usersRef.doc(user.uid).update({
           'praxisIds': FieldValue.arrayUnion([praxisId]),
         });
-        // 2) Invite erst NACH erfolgreichem Update loeschen
+        // 2) In den Mitarbeiter-Index des Standorts eintragen (Anzeige)
+        await _indexMitarbeiter(praxisId);
+        // 3) Invite erst NACH erfolgreichem Update loeschen
         await invite.reference.delete();
       } catch (e) {
         // Wenn Update fehlschlaegt (Rule-Verletzung), Invite stehen lassen.
@@ -805,6 +889,14 @@ class FirebaseService {
     await _usersRef.doc(userUid).update({
       'praxisIds': FieldValue.arrayRemove([praxisId]),
     });
+
+    // Aus dem Mitarbeiter-Index entfernen (Anzeige)
+    try {
+      await _mitarbeiterRef(praxisId).doc(userUid).delete();
+    } catch (e) {
+      // ignore: avoid_print
+      print('Mitarbeiter-Index-Eintrag nicht loeschbar: $e');
+    }
 
     // Falls der entfernte Standort der aktive war, zum ersten verbleibenden wechseln
     final userDoc = await _usersRef.doc(userUid).get();
@@ -822,8 +914,41 @@ class FirebaseService {
   }
 
   /// Aendert die Rolle eines Nutzers.
+  ///
+  /// ACHTUNG: `role` ist GLOBAL, nicht pro Standort. Andere Nutzer duerfen
+  /// deshalb client-seitig NICHT umgestuft werden (Firestore-Rules verbieten
+  /// es): Ein global gesetztes `admin` wuerde sonst auch in den Standorten
+  /// ANDERER Mandanten Admin-Rechte verleihen. Fuer "Admin dieses Standorts"
+  /// gibt es [setStandortAdmin].
   Future<void> updateUserRole(String userUid, UserRole role) async {
     await _usersRef.doc(userUid).update({'role': role.name});
+  }
+
+  /// Macht [uid] zum Admin dieses Standorts — oder nimmt das Recht wieder weg.
+  ///
+  /// Wirkt nur auf DIESEN Standort (`praxen/{praxisId}.admins`), niemals
+  /// global. Ein Standort-Admin verliert seinen Zugriff nie, auch wenn
+  /// praxisIds den Eintrag verliert.
+  Future<void> setStandortAdmin(
+    String praxisId,
+    String uid, {
+    required bool istAdmin,
+  }) async {
+    await _praxenRef.doc(praxisId).update({
+      'admins': istAdmin
+          ? FieldValue.arrayUnion([uid])
+          : FieldValue.arrayRemove([uid]),
+    });
+    // Index-Eintrag fuer die Anzeige nachziehen (best effort).
+    try {
+      await _mitarbeiterRef(praxisId).doc(uid).set(
+        {'role': istAdmin ? 'admin' : 'user'},
+        SetOptions(merge: true),
+      );
+    } catch (e) {
+      // ignore: avoid_print
+      print('Mitarbeiter-Index (role) nicht aktualisierbar: $e');
+    }
   }
 
   // ============================================================

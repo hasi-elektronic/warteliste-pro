@@ -1,7 +1,7 @@
 name: warteliste_pro
 description: "WarteListe Pro - Wartelisten-Management für Logopädie-Praxen"
 publish_to: 'none'
-version: 1.5.23+52
+version: 1.7.0+55
 
 environment:
   sdk: ^3.7.2
@@ -16,8 +16,6 @@ dependencies:
   firebase_auth: ^5.5.1
   cloud_firestore: ^5.6.5
   firebase_messaging: ^15.2.4
-  firebase_storage: ^12.4.4
-  image_picker: ^1.1.2
   flutter_riverpod: ^2.6.1
   go_router: ^14.8.1
   excel: ^4.0.6

@@ -482,6 +482,26 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
 
                 const SizedBox(height: 8),
 
+                // ── Ärzte-Adressbuch ──
+                _buildSectionHeader(
+                  'Ärzte',
+                  Icons.local_hospital_rounded,
+                ),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: ListTile(
+                    leading: const Icon(Icons.local_hospital_outlined,
+                        color: AppTheme.primaryColor),
+                    title: const Text('Ärzte-Adressbuch'),
+                    subtitle: const Text(
+                        'Ärzte anlegen und in Briefen als Empfänger einfügen'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).pushNamed('/aerzte'),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
                 // ── Daten ──
                 _buildSectionHeader(
                   s.sektionDaten,
@@ -546,6 +566,7 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
     final standorteAsync = ref.watch(standorteProvider);
     final currentPraxisId = ref.watch(praxisIdProvider);
     final isGerman = s.isGerman;
+    final meineUid = ref.read(firebaseServiceProvider).currentUser?.uid ?? '';
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -631,7 +652,12 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                             ),
                           ),
                         ),
-                      if (!isActive && standorte.length > 1)
+                      // Admins koennen ihren eigenen Standort nicht entfernen —
+                      // er ist ueber das admins-Array fest zugeordnet und
+                      // käme sofort wieder. Darum kein Papierkorb.
+                      if (!isActive &&
+                          standorte.length > 1 &&
+                          !praxis.istAdmin(meineUid))
                         IconButton(
                           icon: const Icon(Icons.delete_outline, size: 20),
                           onPressed: () =>
@@ -1811,6 +1837,32 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
               );
             }
 
+            // Fehler NICHT verschlucken: frueher wurde jeder Fehler (z.B.
+            // permission-denied) als "Keine Mitarbeiter" angezeigt — dadurch
+            // blieb ein defekter Zugriff lange unbemerkt.
+            if (snapshot.hasError) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.error_outline,
+                        color: AppTheme.errorColor, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        isGerman
+                            ? 'Mitarbeiter konnten nicht geladen werden:\n${snapshot.error}'
+                            : 'Could not load team members:\n${snapshot.error}',
+                        style: const TextStyle(
+                            color: AppTheme.errorColor, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
             final mitarbeiter = snapshot.data ?? [];
             final currentUid =
                 ref.read(firebaseServiceProvider).currentUser?.uid;
@@ -1897,11 +1949,11 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                                     Text(
                                       user.isAdmin
                                           ? (isGerman
-                                              ? 'Zu Mitarbeiter machen'
-                                              : 'Make staff')
+                                              ? 'Admin-Recht entziehen'
+                                              : 'Remove admin right')
                                           : (isGerman
-                                              ? 'Zu Admin machen'
-                                              : 'Make admin'),
+                                              ? 'Admin für diesen Standort'
+                                              : 'Admin for this location'),
                                     ),
                                   ],
                                 ),
@@ -1928,18 +1980,34 @@ class _EinstellungenScreenState extends ConsumerState<EinstellungenScreen> {
                             ],
                             onSelected: (value) async {
                               if (value == 'role') {
-                                final newRole = user.isAdmin
-                                    ? UserRole.user
-                                    : UserRole.admin;
-                                await ref
-                                    .read(firebaseServiceProvider)
-                                    .updateUserRole(user.uid, newRole);
-                                if (mounted) setState(() {});
-                                _showSnackBar(
-                                  isGerman
-                                      ? 'Rolle geändert'
-                                      : 'Role changed',
-                                );
+                                // Admin-Recht gilt pro STANDORT (praxen.admins),
+                                // nicht global — sonst waere der Nutzer auch bei
+                                // anderen Mandanten Admin.
+                                try {
+                                  await ref
+                                      .read(firebaseServiceProvider)
+                                      .setStandortAdmin(
+                                        praxisId,
+                                        user.uid,
+                                        istAdmin: !user.isAdmin,
+                                      );
+                                  if (mounted) setState(() {});
+                                  _showSnackBar(
+                                    user.isAdmin
+                                        ? (isGerman
+                                            ? 'Admin-Recht für diesen Standort entzogen'
+                                            : 'Admin right removed for this location')
+                                        : (isGerman
+                                            ? 'Admin für diesen Standort'
+                                            : 'Admin for this location'),
+                                  );
+                                } catch (e) {
+                                  _showSnackBar(
+                                    isGerman
+                                        ? 'Fehler: $e'
+                                        : 'Error: $e',
+                                  );
+                                }
                               } else if (value == 'remove') {
                                 _confirmRemoveMitarbeiter(
                                   user,

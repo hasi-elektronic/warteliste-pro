@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../l10n/strings.dart';
 import '../../models/patient.dart';
 import '../../models/therapeut.dart';
+import '../../models/arzt.dart';
 import '../../providers/patienten_provider.dart';
 import '../../providers/standort_provider.dart';
 import '../../utils/constants.dart';
@@ -37,6 +38,9 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
   late final TextEditingController _telefonController;
   late final TextEditingController _adresseController;
   late final TextEditingController _arztController;
+  late final TextEditingController _arztStrasseController;
+  late final TextEditingController _arztPlzController;
+  late final TextEditingController _arztOrtController;
   late final TextEditingController _weitereInfosController;
   late final TextEditingController _sonstigeStoerungController;
   late final TextEditingController _verordnungsMengeController;
@@ -69,6 +73,10 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
     _telefonController = TextEditingController(text: p?.telefon ?? '');
     _adresseController = TextEditingController(text: p?.adresse ?? '');
     _arztController = TextEditingController(text: p?.arzt ?? '');
+    _arztStrasseController =
+        TextEditingController(text: p?.arztStrasse ?? '');
+    _arztPlzController = TextEditingController(text: p?.arztPlz ?? '');
+    _arztOrtController = TextEditingController(text: p?.arztOrt ?? '');
     _weitereInfosController =
         TextEditingController(text: p?.weitereInfos ?? '');
     _sonstigeStoerungController = TextEditingController();
@@ -127,6 +135,9 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
     _telefonController.dispose();
     _adresseController.dispose();
     _arztController.dispose();
+    _arztStrasseController.dispose();
+    _arztPlzController.dispose();
+    _arztOrtController.dispose();
     _weitereInfosController.dispose();
     _sonstigeStoerungController.dispose();
     _verordnungsMengeController.dispose();
@@ -304,6 +315,9 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
           stoerungsbild: _resolvedStoerungsbild,
           versicherung: _versicherung,
           arzt: _arztController.text.trim(),
+          arztStrasse: _arztStrasseController.text.trim(),
+          arztPlz: _arztPlzController.text.trim(),
+          arztOrt: _arztOrtController.text.trim(),
           terminWunsch: _terminWunsch,
           weitereInfos: _weitereInfosController.text.trim(),
           geburtsdatum: _geburtsdatum,
@@ -341,6 +355,9 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
           stoerungsbild: _resolvedStoerungsbild,
           versicherung: _versicherung,
           arzt: _arztController.text.trim(),
+          arztStrasse: _arztStrasseController.text.trim(),
+          arztPlz: _arztPlzController.text.trim(),
+          arztOrt: _arztOrtController.text.trim(),
           terminWunsch: _terminWunsch,
           weitereInfos: _weitereInfosController.text.trim(),
           geburtsdatum: _geburtsdatum,
@@ -395,6 +412,61 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
       default:
         return k;
     }
+  }
+
+  /// Uebernimmt Arzt-Daten aus dem Praxis-Adressbuch in die Arzt-Felder.
+  Future<void> _arztAusAdressbuch() async {
+    final aerzte = ref.read(aerzteProvider).value ?? const <Arzt>[];
+    if (aerzte.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Noch keine Ärzte im Adressbuch. Unter Einstellungen → '
+            'Ärzte-Adressbuch anlegen.',
+          ),
+          action: SnackBarAction(
+            label: 'Öffnen',
+            onPressed: () => Navigator.of(context).pushNamed('/aerzte'),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final selected = await showModalBottomSheet<Arzt>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text('Arzt aus Adressbuch wählen',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
+            const Divider(height: 1),
+            ...aerzte.map(
+              (a) => ListTile(
+                leading: const Icon(Icons.local_hospital_outlined,
+                    color: AppTheme.primaryColor),
+                title: Text(a.name.isEmpty ? '(ohne Namen)' : a.name),
+                subtitle: a.anzeigeZeile == a.name ? null : Text(a.anzeigeZeile),
+                onTap: () => Navigator.of(ctx).pop(a),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selected == null || !mounted) return;
+
+    setState(() {
+      _arztController.text = selected.name;
+      _arztStrasseController.text = selected.strasse;
+      _arztPlzController.text = selected.plz;
+      _arztOrtController.text = selected.ort;
+    });
   }
 
   @override
@@ -635,14 +707,71 @@ class _PatientFormScreenState extends ConsumerState<PatientFormScreen> {
             const SizedBox(height: 12),
 
             // Arzt
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    isDe ? 'Verordnender Arzt' : 'Prescribing doctor',
+                    style: theme.textTheme.labelLarge
+                        ?.copyWith(color: AppTheme.slate700),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _arztAusAdressbuch,
+                  icon: const Icon(Icons.contacts_outlined, size: 18),
+                  label: Text(isDe ? 'Aus Adressbuch' : 'From address book'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
             TextFormField(
               controller: _arztController,
               decoration: InputDecoration(
-                labelText: isDe ? 'Verordnender Arzt' : 'Prescribing doctor',
+                labelText: isDe ? 'Name des Arztes' : 'Doctor name',
                 prefixIcon: const Icon(Icons.local_hospital_outlined),
               ),
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+
+            // Arzt-Adresse (fuer Briefe / Mitteilung an Arzt)
+            TextFormField(
+              controller: _arztStrasseController,
+              decoration: InputDecoration(
+                labelText: isDe ? 'Arzt: Straße & Nr.' : 'Doctor: street & no.',
+                prefixIcon: const Icon(Icons.location_on_outlined),
+              ),
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 120,
+                  child: TextFormField(
+                    controller: _arztPlzController,
+                    decoration: InputDecoration(
+                      labelText: isDe ? 'Arzt: PLZ' : 'Doctor: ZIP',
+                    ),
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _arztOrtController,
+                    decoration: InputDecoration(
+                      labelText: isDe ? 'Arzt: Ort' : 'Doctor: city',
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                    textInputAction: TextInputAction.next,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
 

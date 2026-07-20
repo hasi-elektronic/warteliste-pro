@@ -80,6 +80,37 @@ class BerichtRichEditorState extends State<BerichtRichEditor> {
     super.dispose();
   }
 
+  /// Ersetzt den gesamten Inhalt (z.B. beim Wechsel der Vorlage/Kategorie).
+  /// [content] darf Delta-JSON oder Plain Text sein.
+  void loadContent(String content) {
+    _controller.removeListener(_emitChange);
+    _controller.dispose();
+    _controller = _buildController(content);
+    _controller.addListener(_emitChange);
+    if (mounted) setState(() {});
+    _emitChange();
+  }
+
+  /// Fuegt [text] an der aktuellen Cursor-Position ein (bzw. am Ende, falls
+  /// keine gueltige Auswahl vorhanden ist).
+  void insertTextAtCursor(String text) {
+    final sel = _controller.selection;
+    // Das Quill-Dokument endet immer mit einem "\n" — daher length - 1 als
+    // sichere Obergrenze fuer den Einfuege-Index.
+    final maxIndex = _controller.document.length - 1;
+    var index = sel.isValid ? sel.baseOffset : maxIndex;
+    if (index < 0) index = 0;
+    if (index > maxIndex) index = maxIndex;
+    _controller.replaceText(
+      index,
+      0,
+      text,
+      TextSelection.collapsed(offset: index + text.length),
+    );
+    _focus.requestFocus();
+    _emitChange();
+  }
+
   /// Aktueller Plaintext (z.B. fuer Validierung).
   String get plainText => _controller.document.toPlainText().trim();
 

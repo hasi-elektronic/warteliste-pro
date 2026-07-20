@@ -10,6 +10,7 @@ import 'screens/bericht/berichte_liste_screen.dart';
 import 'screens/bericht/verordnungsbericht_form_screen.dart';
 import 'screens/bericht/vordruck_liste_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
+import 'screens/einstellungen/aerzte_screen.dart';
 import 'screens/patient/patient_form_screen.dart';
 import 'screens/warteliste/papierkorb_screen.dart';
 import 'screens/warteliste/patient_detail_screen.dart';
@@ -65,6 +66,10 @@ class AppRouter {
       case '/vordrucke':
         return MaterialPageRoute(
           builder: (_) => const VordruckListeScreen(),
+        );
+      case '/aerzte':
+        return MaterialPageRoute(
+          builder: (_) => const AerzteScreen(),
         );
       case '/verordnungsbericht/neu':
         final patient = settings.arguments as Patient?;

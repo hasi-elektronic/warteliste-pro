@@ -19,12 +19,29 @@
 ```
 /users/{userId} - Benutzer mit role (admin/user), praxisId, praxisIds[]
 /invites/{inviteId} - Einladungen fuer Mitarbeiter
-/praxen/{praxisId} - Praxis-Daten
+/praxen/{praxisId} - Praxis-Daten, admins[] (UIDs der Standort-Admins)
 /praxen/{praxisId}/patienten/{id} - Patienten
 /praxen/{praxisId}/therapeuten/{id} - Therapeuten
+/praxen/{praxisId}/aerzte/{id} - Arzt-Adressbuch (Briefe)
+/praxen/{praxisId}/mitarbeiter/{uid} - Index fuer die Mitarbeiter-Anzeige
 /praxen/{praxisId}/termine/{id} - Termine
 /praxen/{praxisId}/tokens/{id} - FCM Tokens
 ```
+
+### Zugriffsmodell (wichtig)
+- **Zugriff** haengt an `users/{uid}.praxisIds` — ODER daran, dass der Nutzer
+  in `praxen/{id}.admins` steht. Ein **Standort-Admin verliert seinen Zugriff
+  nie**, auch wenn praxisIds den Eintrag verliert ("Standort entfernen").
+- `role` ist **global** — andere Nutzer duerfen client-seitig NICHT umgestuft
+  werden (sonst Admin-Rechte bei fremden Mandanten). "Admin dieses Standorts"
+  laeuft ueber `praxen.admins` (`setStandortAdmin`).
+- **`users` ist client-seitig NICHT per Query lesbar**: bei `list` ist
+  `resource` in den Rules null, datenabhaengige Regeln sind dort nicht
+  auswertbar. Darum der `mitarbeiter`-Index (Regel haengt nur am Pfad).
+- Rules-Regressionstests: `scripts/rules_test.js`
+  (`export JAVA_HOME=/opt/homebrew/opt/openjdk@21` →
+  `firebase emulators:exec --only firestore --project warteliste-rules-test "node scripts/rules_test.js"`)
+- Migrationen: `scripts/migrate_praxis_admins.js`, `scripts/migrate_mitarbeiter_index.js` (beide mit Dry-Run)
 
 ## Mevcut Özellikler (Tamamlanan)
 - ✅ Login / Registrierung (Firebase Auth Email/Password)

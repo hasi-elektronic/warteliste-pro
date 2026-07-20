@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import '../../models/bericht.dart';
 import '../../models/bericht_anhang.dart';
 import '../../models/patient.dart';
+import '../../models/arzt.dart';
 import '../../providers/patienten_provider.dart';
 import '../../providers/standort_provider.dart';
 import '../../services/bericht_pdf_service.dart';
@@ -58,7 +59,8 @@ class BerichtFormScreen extends ConsumerStatefulWidget {
 class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titelCtrl;
-  Key _editorReloadKey = UniqueKey();
+  final GlobalKey<BerichtRichEditorState> _richKey =
+      GlobalKey<BerichtRichEditorState>();
   String _initialInhalt = '';
   String _aktuelleDeltaJson = '';
   String _aktuellerPlaintext = '';
@@ -155,18 +157,54 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
   }
 
   void _applyVorlage(BerichtKategorie k) {
+    final aktuell = _aktuellerPlaintext.trim();
+    final alteVorlagen =
+        BerichtKategorie.values.map((e) => e.vorlage.trim()).toSet();
+    final resetInhalt = aktuell.isEmpty || alteVorlagen.contains(aktuell);
     setState(() {
       _kategorie = k;
-      final aktuell = _aktuellerPlaintext.trim();
-      final alteVorlagen =
-          BerichtKategorie.values.map((e) => e.vorlage.trim()).toSet();
-      if (aktuell.isEmpty || alteVorlagen.contains(aktuell)) {
+      if (resetInhalt) {
         _initialInhalt = k.vorlage;
         _aktuelleDeltaJson = k.vorlage;
         _aktuellerPlaintext = k.vorlage;
-        _editorReloadKey = UniqueKey();
       }
     });
+    if (resetInhalt) {
+      _richKey.currentState?.loadContent(k.vorlage);
+    }
+  }
+
+  /// Fuegt eine Arzt-Adresse aus dem Praxis-Adressbuch an der Cursor-Position
+  /// in den Brief ein.
+  Future<void> _arztEinfuegen() async {
+    final aerzte = ref.read(aerzteProvider).value ?? const <Arzt>[];
+    if (aerzte.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Noch keine Ärzte im Adressbuch. Unter Einstellungen → '
+            'Ärzte-Adressbuch anlegen.',
+          ),
+          action: SnackBarAction(
+            label: 'Öffnen',
+            onPressed: () => Navigator.of(context).pushNamed('/aerzte'),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final selected = await showModalBottomSheet<Arzt>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _ArztPickerSheet(aerzte: aerzte),
+    );
+    if (selected == null || !mounted) return;
+
+    _richKey.currentState?.insertTextAtCursor('${selected.adressBlock}\n');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Arztadresse eingefügt')),
+    );
   }
 
   Future<void> _addAnhang() async {
@@ -501,10 +539,20 @@ class _BerichtFormScreenState extends ConsumerState<BerichtFormScreen> {
                       _kategorie == BerichtKategorie.brief
                           ? 'Betrifft, Anrede, Inhalt, Schluss'
                           : 'Titel + formattierter Bericht',
+                  trailing: TextButton.icon(
+                    onPressed: _arztEinfuegen,
+                    icon: const Icon(Icons.local_hospital_outlined, size: 18),
+                    label: const Text('Arzt einfügen'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.primaryColor,
+                      backgroundColor:
+                          AppTheme.primaryColor.withValues(alpha: 0.08),
+                    ),
+                  ),
                   padded: false,
                   child: _PaperEditor(
                     titelCtrl: _titelCtrl,
-                    editorReloadKey: _editorReloadKey,
+                    richKey: _richKey,
                     initialInhalt: _initialInhalt,
                     onEditorChanged: (delta, plain) {
                       _aktuelleDeltaJson = delta;
@@ -926,13 +974,13 @@ class _PatientPill extends StatelessWidget {
 
 class _PaperEditor extends StatelessWidget {
   final TextEditingController titelCtrl;
-  final Key editorReloadKey;
+  final GlobalKey<BerichtRichEditorState> richKey;
   final String initialInhalt;
   final void Function(String, String) onEditorChanged;
 
   const _PaperEditor({
     required this.titelCtrl,
-    required this.editorReloadKey,
+    required this.richKey,
     required this.initialInhalt,
     required this.onEditorChanged,
   });
@@ -1009,7 +1057,7 @@ class _PaperEditor extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                   child: BerichtRichEditor(
-                    key: editorReloadKey,
+                    key: richKey,
                     initialDelta: initialInhalt,
                     onChanged: onEditorChanged,
                     minHeight: 480,
@@ -1415,6 +1463,137 @@ class _DatumPicker extends StatelessWidget {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Auswahl-Sheet fuer einen Arzt aus dem Praxis-Adressbuch.
+class _ArztPickerSheet extends StatefulWidget {
+  final List<Arzt> aerzte;
+  const _ArztPickerSheet({required this.aerzte});
+
+  @override
+  State<_ArztPickerSheet> createState() => _ArztPickerSheetState();
+}
+
+class _ArztPickerSheetState extends State<_ArztPickerSheet> {
+  String _query = '';
+  final _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final q = _query.toLowerCase().trim();
+    final liste = widget.aerzte.where((a) {
+      if (q.isEmpty) return true;
+      return a.name.toLowerCase().contains(q) ||
+          a.fachrichtung.toLowerCase().contains(q) ||
+          a.ort.toLowerCase().contains(q);
+    }).toList();
+
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      builder: (ctx, scrollCtrl) => SafeArea(
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: AppTheme.slate300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.local_hospital_outlined,
+                      color: AppTheme.primaryColor, size: 22),
+                  SizedBox(width: 8),
+                  Text(
+                    'Arzt auswählen',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.slate900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Name, Fachrichtung, Ort …',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _query.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() => _query = '');
+                          },
+                        )
+                      : null,
+                  isDense: true,
+                ),
+                onChanged: (v) => setState(() => _query = v),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: liste.isEmpty
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text('Keine Ärzte gefunden'),
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: scrollCtrl,
+                      itemCount: liste.length,
+                      itemBuilder: (_, i) {
+                        final a = liste[i];
+                        final untertitel = [
+                          if (a.fachrichtung.trim().isNotEmpty) a.fachrichtung,
+                          [a.plz, a.ort]
+                              .where((e) => e.trim().isNotEmpty)
+                              .join(' '),
+                        ].where((e) => e.trim().isNotEmpty).join(' · ');
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor:
+                                AppTheme.primaryColor.withValues(alpha: 0.12),
+                            child: const Icon(Icons.local_hospital_outlined,
+                                color: AppTheme.primaryColor, size: 18),
+                          ),
+                          title: Text(
+                            a.name.isEmpty ? '(ohne Namen)' : a.name,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: untertitel.isEmpty ? null : Text(untertitel),
+                          onTap: () => Navigator.of(context).pop(a),
+                        );
+                      },
+                    ),
+            ),
           ],
         ),
       ),

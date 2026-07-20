@@ -55,6 +55,44 @@ service cloud.firestore {
         );
     }
 
+    // Admin-Zugriff ueber das Praxis-Dokument selbst (admins-Array bzw.
+    // Ersteller). Unabhaengig von users/{uid}.praxisIds — dadurch kann ein
+    // Admin den Zugriff auf seinen eigenen Standort NICHT verlieren (z.B.
+    // durch versehentliches "Standort entfernen").
+    function isPraxisAdminDoc(praxisId) {
+      let praxisRef = /databases/$(database)/documents/praxen/$(praxisId);
+      return signedIn()
+        && exists(praxisRef)
+        && (
+          request.auth.uid in get(praxisRef).data.get('admins', [])
+          || get(praxisRef).data.get('createdBy', '') == request.auth.uid
+        );
+    }
+
+    // Zugriff auf eine Praxis + ihre Subcollections: Mitglied ODER Admin.
+    function canAccessPraxis(praxisId) {
+      return isPraxisMember(praxisId) || isPraxisAdminDoc(praxisId);
+    }
+
+    // Ist der Aufrufer Admin MINDESTENS eines Standorts aus `list`?
+    // Kurzschluss (||) haelt die get()-Kosten klein; max. 3 Eintraege wegen
+    // des Firestore-Limits von 10 get()/exists() pro Request.
+    function actorAdminsAnyOf(list) {
+      let n = list.size();
+      return (n >= 1 && isPraxisAdminDoc(list[0]))
+        || (n >= 2 && isPraxisAdminDoc(list[1]))
+        || (n >= 3 && isPraxisAdminDoc(list[2]));
+    }
+
+    // Ist der Aufrufer Admin JEDES Standorts aus `list`? (leere Liste = true)
+    function actorAdminsAllOf(list) {
+      let n = list.size();
+      return n <= 3
+        && (n < 1 || isPraxisAdminDoc(list[0]))
+        && (n < 2 || isPraxisAdminDoc(list[1]))
+        && (n < 3 || isPraxisAdminDoc(list[2]));
+    }
+
     // Prueft, ob ein einzelner praxisId-Eintrag fuer den User zulaessig ist.
     // Entweder: schon vorher im Dokument (=> war legitim), ODER
     // der User hat die Praxis erstellt, ODER er hat ein passendes Invite.
@@ -83,7 +121,14 @@ service cloud.firestore {
 
     // ================= /users/{userId} =================
     match /users/{userId} {
-      allow read: if isSelf(userId);
+      // Read: sich selbst ODER — fuer die Mitarbeiter-Verwaltung — ein Admin,
+      // der mindestens einen Standort dieses Nutzers administriert.
+      allow read: if isSelf(userId)
+        || (
+          resource != null
+          && resource.data != null
+          && actorAdminsAnyOf(resource.data.get('praxisIds', []))
+        );
 
       allow create: if isSelf(userId)
         && request.resource.data.get('email', '') == request.auth.token.email
@@ -108,25 +153,54 @@ service cloud.firestore {
       // Prozess, den wir nicht mehr client-seitig erlauben). email darf
       // auch nicht veraendert werden. praxisIds/praxisId jeder Eintrag
       // muss autorisiert sein.
-      allow update: if isSelf(userId)
-        && request.resource.data.get('email', '') == resource.data.get('email', '')
-        && request.resource.data.get('role', 'admin') == resource.data.get('role', 'admin')
-        && eachPraxisIdAllowed(
-             request.resource.data.get('praxisIds', []),
-             resource.data.get('praxisIds', []),
-             request.auth.uid,
-             request.auth.token.email
-           )
-        && (
-          !('praxisId' in request.resource.data)
-          || request.resource.data.praxisId == ''
-          || praxisEntryAllowed(
-               request.resource.data.praxisId,
+      allow update: if (
+          isSelf(userId)
+          && request.resource.data.get('email', '') == resource.data.get('email', '')
+          && request.resource.data.get('role', 'admin') == resource.data.get('role', 'admin')
+          && eachPraxisIdAllowed(
+               request.resource.data.get('praxisIds', []),
                resource.data.get('praxisIds', []),
                request.auth.uid,
                request.auth.token.email
              )
-          || request.resource.data.praxisId in request.resource.data.get('praxisIds', [])
+          && (
+            !('praxisId' in request.resource.data)
+            || request.resource.data.praxisId == ''
+            || praxisEntryAllowed(
+                 request.resource.data.praxisId,
+                 resource.data.get('praxisIds', []),
+                 request.auth.uid,
+                 request.auth.token.email
+               )
+            || request.resource.data.praxisId in request.resource.data.get('praxisIds', [])
+          )
+        )
+        // ---- Mitarbeiter-Verwaltung durch einen Standort-Admin ----
+        // Ein Admin darf den Standort-Zugriff EINES ANDEREN Nutzers pflegen.
+        // Streng begrenzt:
+        //  * nur die Felder praxisIds/praxisId duerfen sich aendern
+        //    (=> role/email unveraenderbar, keine Rechte-Eskalation),
+        //  * jeder hinzugefuegte UND entfernte Standort muss vom Aufrufer
+        //    administriert werden (=> keine fremden Mandanten),
+        //  * praxisId (aktiver Standort) muss in praxisIds enthalten bleiben.
+        || (
+          signedIn()
+          && request.auth.uid != userId
+          && request.resource.data.diff(resource.data)
+               .affectedKeys().hasOnly(['praxisIds', 'praxisId'])
+          && actorAdminsAllOf(
+               request.resource.data.get('praxisIds', [])
+                 .removeAll(resource.data.get('praxisIds', []))
+             )
+          && actorAdminsAllOf(
+               resource.data.get('praxisIds', [])
+                 .removeAll(request.resource.data.get('praxisIds', []))
+             )
+          && (
+            request.resource.data.get('praxisId', '') == ''
+            || request.resource.data.get('praxisId', '')
+                 in request.resource.data.get('praxisIds', [])
+          )
         );
 
       // Self-delete erlaubt (z.B. Account-Loeschung)
@@ -170,7 +244,12 @@ service cloud.firestore {
     match /praxen/{praxisId} {
       // Read: Mitglieder ODER Legacy-Selbst-Claim (praxis ohne createdBy,
       // Email gleicht auth.token.email).
+      // Read: Mitglieder, Admins (admins-Array/Ersteller — ohne get(), da wir
+      // genau dieses Dokument lesen; ermoeglicht auch die Query
+      // `praxen where admins array-contains uid`), ODER Legacy-Selbst-Claim.
       allow read: if isPraxisMember(praxisId)
+        || (signedIn() && request.auth.uid in resource.data.get('admins', []))
+        || (signedIn() && resource.data.get('createdBy', '') == request.auth.uid)
         || (
           signedIn()
           && resource.data.get('createdBy', '') == ''
@@ -188,7 +267,11 @@ service cloud.firestore {
       //  (2) Selbst-Claim: legacy Praxis ohne createdBy, Email matcht,
       //      nur das Feld createdBy darf sich aendern.
       allow update: if (
-          (isPraxisAdmin(praxisId) || isPraxisOwnedBy(praxisId, request.auth.uid))
+          (
+            isPraxisAdmin(praxisId)
+            || isPraxisOwnedBy(praxisId, request.auth.uid)
+            || isPraxisAdminDoc(praxisId)
+          )
           && request.resource.data.get('createdBy', '') ==
              resource.data.get('createdBy', '')
         )
@@ -202,33 +285,56 @@ service cloud.firestore {
 
       allow delete: if isPraxisOwnedBy(praxisId, request.auth.uid);
 
-      // ------- Subcollections (nur Mitglieder) -------
+      // ------- Subcollections (Mitglieder ODER Admins des Standorts) -------
       match /patienten/{patientId} {
-        allow read, write: if isPraxisMember(praxisId);
+        allow read, write: if canAccessPraxis(praxisId);
 
         match /notizen/{noteId} {
-          allow read, write: if isPraxisMember(praxisId);
+          allow read, write: if canAccessPraxis(praxisId);
         }
         match /dokumente/{dokumentId} {
-          allow read, write: if isPraxisMember(praxisId);
+          allow read, write: if canAccessPraxis(praxisId);
         }
+      }
+
+      // Mitarbeiter-Index eines Standorts: { email, role, joinedAt }.
+      //
+      // WICHTIG — warum dieser Index existiert: Bei einer Collection-Query
+      // (`list`) ist `resource` in den Rules NULL. Eine Regel wie
+      // "users lesen, wenn ich Admin eines seiner Standorte bin" kann darum
+      // NICHT fuer `users`-Queries ausgewertet werden (Firestore lehnt ab).
+      // Hier haengt die Regel nur am Pfad (praxisId) — deshalb ist die Query
+      // erlaubt. Quelle der Wahrheit fuer den Zugriff bleibt
+      // users/{uid}.praxisIds; dies ist nur der Index fuer die Anzeige.
+      match /mitarbeiter/{mitarbeiterUid} {
+        allow read: if canAccessPraxis(praxisId);
+        // Eigenen Eintrag darf jedes Mitglied pflegen, alle anderen nur Admins.
+        allow write: if canAccessPraxis(praxisId)
+          && (
+            mitarbeiterUid == request.auth.uid
+            || isPraxisAdminDoc(praxisId)
+          );
       }
 
       match /therapeuten/{therapeutId} {
-        allow read, write: if isPraxisMember(praxisId);
+        allow read, write: if canAccessPraxis(praxisId);
+      }
+
+      match /aerzte/{arztId} {
+        allow read, write: if canAccessPraxis(praxisId);
       }
 
       match /termine/{terminId} {
-        allow read, write: if isPraxisMember(praxisId);
+        allow read, write: if canAccessPraxis(praxisId);
       }
 
       match /tokens/{tokenId} {
-        allow read, write: if isPraxisMember(praxisId);
+        allow read, write: if canAccessPraxis(praxisId);
       }
 
       // Berichte: praxen-weit, alle Mitarbeiter sehen sie
       match /berichte/{berichtId} {
-        allow read, write: if isPraxisMember(praxisId);
+        allow read, write: if canAccessPraxis(praxisId);
       }
     }
   }

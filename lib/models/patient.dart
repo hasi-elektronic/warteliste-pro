@@ -76,6 +76,12 @@ class Patient {
   final String telefon;
   final String versicherung;
   final String arzt;
+
+  // ── Arzt-Adresse (fuer Briefe / Mitteilung an Arzt) ──
+  final String arztStrasse;
+  final String arztPlz;
+  final String arztOrt;
+
   final String stoerungsbild;
   final String terminWunsch;
   final String weitereInfos;
@@ -132,6 +138,9 @@ class Patient {
     this.telefon = '',
     this.versicherung = 'KK',
     this.arzt = '',
+    this.arztStrasse = '',
+    this.arztPlz = '',
+    this.arztOrt = '',
     this.stoerungsbild = '',
     this.terminWunsch = 'flexibel',
     this.weitereInfos = '',
@@ -196,6 +205,29 @@ class Patient {
   /// Vollstaendiger Name: "Vorname Name"
   String get vollstaendigerName => '$vorname $name'.trim();
 
+  /// Formatierter Arzt-Adressblock fuer Briefe (mehrzeilig, leer wenn keine
+  /// Daten hinterlegt sind).
+  ///
+  /// Beispiel:
+  /// ```
+  /// Dr. med. Max Mustermann
+  /// Hauptstraße 1
+  /// 71665 Vaihingen
+  /// ```
+  String get arztAdressBlock {
+    final zeilen = <String>[];
+    if (arzt.trim().isNotEmpty) zeilen.add(arzt.trim());
+    if (arztStrasse.trim().isNotEmpty) zeilen.add(arztStrasse.trim());
+    final plzOrt = [arztPlz.trim(), arztOrt.trim()]
+        .where((e) => e.isNotEmpty)
+        .join(' ');
+    if (plzOrt.isNotEmpty) zeilen.add(plzOrt);
+    return zeilen.join('\n');
+  }
+
+  /// Ob mindestens eine Arzt-Adressangabe (Name/Straße/PLZ/Ort) vorhanden ist.
+  bool get hatArztAdresse => arztAdressBlock.trim().isNotEmpty;
+
   /// Factory: Erstellt Patient aus Firestore-Dokument.
   factory Patient.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
@@ -208,6 +240,9 @@ class Patient {
       telefon: data['telefon'] as String? ?? '',
       versicherung: data['versicherung'] as String? ?? 'KK',
       arzt: data['arzt'] as String? ?? '',
+      arztStrasse: data['arztStrasse'] as String? ?? '',
+      arztPlz: data['arztPlz'] as String? ?? '',
+      arztOrt: data['arztOrt'] as String? ?? '',
       stoerungsbild: data['stoerungsbild'] as String? ?? '',
       terminWunsch: data['terminWunsch'] as String? ?? 'flexibel',
       weitereInfos: data['weitereInfos'] as String? ?? '',
@@ -254,6 +289,9 @@ class Patient {
       'telefon': telefon,
       'versicherung': versicherung,
       'arzt': arzt,
+      'arztStrasse': arztStrasse,
+      'arztPlz': arztPlz,
+      'arztOrt': arztOrt,
       'stoerungsbild': stoerungsbild,
       'terminWunsch': terminWunsch,
       'weitereInfos': weitereInfos,
@@ -350,6 +388,10 @@ class Patient {
       telefon: getString(row, ['Telefon', 'telefon', 'Tel', 'Tel.']),
       versicherung: getString(row, ['Versicherung', 'versicherung', 'Kasse']),
       arzt: getString(row, ['Arzt', 'arzt', 'Verordnender Arzt']),
+      arztStrasse: getString(
+          row, ['Arzt Straße', 'Arzt Strasse', 'arztStrasse', 'Arzt-Straße']),
+      arztPlz: getString(row, ['Arzt PLZ', 'arztPlz', 'Arzt-PLZ']),
+      arztOrt: getString(row, ['Arzt Ort', 'arztOrt', 'Arzt-Ort']),
       stoerungsbild: getString(row, [
         'Störungsbild',
         'Stoerungsbild',
@@ -387,6 +429,9 @@ class Patient {
     String? telefon,
     String? versicherung,
     String? arzt,
+    String? arztStrasse,
+    String? arztPlz,
+    String? arztOrt,
     String? stoerungsbild,
     String? terminWunsch,
     String? weitereInfos,
@@ -424,6 +469,9 @@ class Patient {
       telefon: telefon ?? this.telefon,
       versicherung: versicherung ?? this.versicherung,
       arzt: arzt ?? this.arzt,
+      arztStrasse: arztStrasse ?? this.arztStrasse,
+      arztPlz: arztPlz ?? this.arztPlz,
+      arztOrt: arztOrt ?? this.arztOrt,
       stoerungsbild: stoerungsbild ?? this.stoerungsbild,
       terminWunsch: terminWunsch ?? this.terminWunsch,
       weitereInfos: weitereInfos ?? this.weitereInfos,

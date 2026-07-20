@@ -38,6 +38,31 @@ class AppUser {
 
   bool get isAdmin => role == UserRole.admin;
 
+  /// Baut einen AppUser aus dem Mitarbeiter-Index eines Standorts
+  /// (`/praxen/{praxisId}/mitarbeiter/{uid}` mit { email, role }).
+  ///
+  /// Noetig, weil `users` client-seitig NICHT per Query gelesen werden kann:
+  /// bei `list` ist `resource` in den Firestore-Rules null, eine
+  /// datenabhaengige Regel ist dort nicht auswertbar.
+  factory AppUser.fromMitarbeiterIndex(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+    String praxisId,
+  ) {
+    final data = doc.data() ?? const <String, dynamic>{};
+    final roleStr = data['role'] as String? ?? 'user';
+    return AppUser(
+      uid: doc.id,
+      email: data['email'] as String? ?? '',
+      displayName: data['displayName'] as String? ?? '',
+      role: roleStr == 'admin' ? UserRole.admin : UserRole.user,
+      praxisId: praxisId,
+      praxisIds: [praxisId],
+      createdAt: data['joinedAt'] != null
+          ? (data['joinedAt'] as Timestamp).toDate()
+          : DateTime.now(),
+    );
+  }
+
   factory AppUser.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> doc,
   ) {
