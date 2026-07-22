@@ -16,7 +16,10 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.hasielektronic.warteliste_pro"
-    compileSdk = flutter.compileSdkVersion
+    // Sabit 36 (Android 16) — Google Play zorunluluğu (31.08.2026).
+    // Flutter'in kendi varsayılanına (flutter.compileSdkVersion) bağlı kalmıyoruz,
+    // çünkü Flutter sürümüne göre bu değer 35'te kalabiliyor.
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -31,7 +34,7 @@ android {
     defaultConfig {
         applicationId = "com.hasielektronic.warteliste_pro"
         minSdk = 23
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
